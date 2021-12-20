@@ -1,0 +1,16 @@
+version: '3'
+services:
+  redis:
+    image: "redislabs/redisearch:latest"
+    ports:
+      - "6379:6379"
+  streams2ws:
+    image: "maguec/searchql:latest"
+    ports:
+      - "8080:8080"
+    links:
+      - "redis:redis"
+    environment:
+      - REDIS_SERVER=redis
+
+
