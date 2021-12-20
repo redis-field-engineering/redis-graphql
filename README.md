@@ -1,6 +1,9 @@
 ## Redisearch GraphQL Proxy
 
 
+## Note: This allows you to *only* search by TEXT fields now
+### Fixes are coming
+
 ### Testing
 
 
@@ -28,6 +31,8 @@ go run searchql.go
 
 Query away!
 
+```
 curl -X POST  -H "Content-Type: application/json" \
    --data '{"query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' \
   http://localhost:8080/graphql
+```
