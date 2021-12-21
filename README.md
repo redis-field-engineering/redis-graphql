@@ -5,6 +5,10 @@ Translate GraphQL queries to RediSearch
 
 ![img](./docs/RediSearchGraphQL.png)
 
+### How this works
+
+The searachql queries the RediSearch server for the search schema then dynamically builds the GraphQL schema to all GraphQL clients to natively query RediSearch with the proxy handling the translation.
+
 
 ### Note: This allows you to *only* search by TEXT fields now
 #### Fixes are coming
