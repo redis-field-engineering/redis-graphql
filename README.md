@@ -1,8 +1,13 @@
 ## Redisearch GraphQL Proxy
 
+Translate GraphQL queries to RediSearch
 
-## Note: This allows you to *only* search by TEXT fields now
-### Fixes are coming
+
+![img](./docs/RediSearchGraphQL.png)
+
+
+### Note: This allows you to *only* search by TEXT fields now
+#### Fixes are coming
 
 ### Testing
 
