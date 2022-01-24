@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,6 +15,10 @@ import (
 /*****************************************************************************/
 /* Shared data variables to allow dynamic reloads
 /*****************************************************************************/
+
+type postVars struct {
+	v map[string]interface{}
+}
 
 type postData struct {
 	Query     string                 `json:"query"`
@@ -31,8 +36,14 @@ var args struct {
 	RedisIndex    string `help:"RediSearch Index" default:"idx" arg:"--redis-index, -i, env:REDIS_INDEX"`
 }
 
-func ftSearch(args map[string]interface{}, client *redisearch.Client) []map[string]interface{} {
+var TagScalar = graphql.NewScalar(graphql.ScalarConfig{
+	Name:        "Tag",
+	Description: "Redisearch Tag",
+})
+
+func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
 	var res []map[string]interface{}
+	fmt.Printf("%+v\n", c.Value("v"))
 
 	qstring := ""
 
@@ -63,6 +74,7 @@ func FtInfo2Schema(client *redisearch.Client) error {
 	args := make(graphql.FieldConfigArgument)
 
 	for _, field := range idx.Schema.Fields {
+		//fmt.Printf("%+v\n", field)
 		if field.Type == 0 {
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
@@ -71,6 +83,25 @@ func FtInfo2Schema(client *redisearch.Client) error {
 				Type: graphql.String,
 			}
 		}
+
+		if field.Type == 1 {
+			fields[field.Name] = &graphql.Field{
+				Type: graphql.Float,
+			}
+			args[field.Name] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+		}
+
+		//if field.Type == 3 {
+		//	fields[field.Name] = &graphql.Field{
+		//		Type: TagScalar,
+		//	}
+		//	args[field.Name] = &graphql.ArgumentConfig{
+		//		Type: graphql.String,
+		//	}
+		//}
+
 	}
 
 	var ftType = graphql.NewObject(
@@ -88,7 +119,7 @@ func FtInfo2Schema(client *redisearch.Client) error {
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return ftSearch(p.Args, client), nil
+						return ftSearch(p.Args, client, p.Context), nil
 					},
 				},
 			},
@@ -119,8 +150,11 @@ func main() {
 			w.WriteHeader(400)
 			return
 		}
+		c := context.Background()
+		z := postVars{v: p.Variables}
+		c = context.WithValue(c, "v", z)
 		result := graphql.Do(graphql.Params{
-			Context:        req.Context(),
+			Context:        c,
 			Schema:         schema,
 			RequestString:  p.Query,
 			VariableValues: p.Variables,
