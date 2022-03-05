@@ -50,7 +50,14 @@ func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.
 	for k, v := range args {
 		switch v.(type) {
 		case string:
-			qstring += "@" + k + ":" + v.(string) + " "
+			if strings.HasSuffix(k, "_not") {
+				qstring += "-@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+			} else if strings.HasSuffix(k, "_opt") {
+				qstring += "~@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+			} else {
+				qstring += "@" + k + ":" + v.(string) + " "
+			}
+
 		case float64:
 			if strings.HasSuffix(k, "_gte") {
 				qstring += "@" + strings.TrimSuffix(k, "_gte") + ":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
@@ -108,6 +115,12 @@ func FtInfo2Schema(client *redisearch.Client) error {
 				Type: graphql.String,
 			}
 			args[field.Name] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+			args[fmt.Sprintf("%s_not", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+			args[fmt.Sprintf("%s_opt", field.Name)] = &graphql.ArgumentConfig{
 				Type: graphql.String,
 			}
 		}
