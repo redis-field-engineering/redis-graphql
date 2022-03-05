@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
@@ -43,14 +44,41 @@ var TagScalar = graphql.NewScalar(graphql.ScalarConfig{
 
 func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
 	var res []map[string]interface{}
-	fmt.Printf("%+v\n", c.Value("v"))
 
 	qstring := ""
 
 	for k, v := range args {
-		qstring += "@" + k + ":" + v.(string) + " "
+		switch v.(type) {
+		case string:
+			qstring += "@" + k + ":" + v.(string) + " "
+		case float64:
+			if strings.HasSuffix(k, "_gte") {
+				qstring += "@" + strings.TrimSuffix(k, "_gte") + ":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
+			} else if strings.HasSuffix(k, "_lte") {
+				qstring += "@" + strings.TrimSuffix(k, "_lte") + ":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
+			} else if strings.HasSuffix(k, "_btw") {
+				qstring += "@" + strings.TrimSuffix(k, "_btw") + ":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
+			} else {
+				qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) + "," + fmt.Sprintf("%f", v.(float64)) + "] "
+			}
+		}
 	}
-	docs, _, err := client.Search(redisearch.NewQuery(qstring))
+	argsMap := c.Value("v").(postVars).v
+	//fmt.Printf("%+v\n", argsMap)
+
+	q := redisearch.NewQuery(qstring)
+
+	if lim, ok := argsMap["limit"]; ok {
+		q = q.Limit(0, int(lim.(float64)))
+	}
+
+	if verbatim, ok := argsMap["verbatim"]; ok {
+		if verbatim.(bool) {
+			q = q.SetFlags(redisearch.QueryVerbatim)
+		}
+	}
+
+	docs, _, err := client.Search(q)
 
 	if err != nil {
 		log.Fatal(err)
@@ -90,6 +118,16 @@ func FtInfo2Schema(client *redisearch.Client) error {
 			}
 			args[field.Name] = &graphql.ArgumentConfig{
 				Type: graphql.Float,
+			}
+			args[fmt.Sprintf("%s_gte", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+			args[fmt.Sprintf("%s_lte", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+			// TODO: handle between!
+			args[fmt.Sprintf("%s_btw", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.String,
 			}
 		}
 
@@ -166,6 +204,6 @@ func main() {
 	})
 
 	fmt.Println("Now server is running on " + args.Addr)
-	fmt.Println(`Example:  curl -X POST  -H "Content-Type: application/json"  --data '{ "variables": {"foo": 1}, "query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' http://localhost:8080/graphql`)
+	fmt.Println(`Example:  curl -X POST  -H "Content-Type: application/json"  --data '{ "variables": {"limit": 29, "verbatim": true}, "query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' http://localhost:8080/graphql`)
 	http.ListenAndServe(args.Addr, nil)
 }
