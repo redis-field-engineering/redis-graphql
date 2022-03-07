@@ -3,7 +3,7 @@ module github.com/redis-field-engineering/SearchQL
 go 1.17
 
 require (
-	github.com/RediSearch/redisearch-go v1.1.1
+	github.com/RediSearch/redisearch-go v1.1.2-0.20211228161710-3374a1b54ed4
 	github.com/alexflint/go-arg v1.4.2
 	github.com/graphql-go/graphql v0.8.0
 )

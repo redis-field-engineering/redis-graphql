@@ -1,10 +1,12 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
@@ -14,6 +16,10 @@ import (
 /*****************************************************************************/
 /* Shared data variables to allow dynamic reloads
 /*****************************************************************************/
+
+type postVars struct {
+	v map[string]interface{}
+}
 
 type postData struct {
 	Query     string                 `json:"query"`
@@ -31,15 +37,59 @@ var args struct {
 	RedisIndex    string `help:"RediSearch Index" default:"idx" arg:"--redis-index, -i, env:REDIS_INDEX"`
 }
 
-func ftSearch(args map[string]interface{}, client *redisearch.Client) []map[string]interface{} {
+var TagScalar = graphql.NewScalar(graphql.ScalarConfig{
+	Name:        `json:"tag"`,
+	Description: `json:"tag_description"`,
+})
+
+func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
 	var res []map[string]interface{}
 
 	qstring := ""
 
 	for k, v := range args {
-		qstring += "@" + k + ":" + v.(string) + " "
+		switch v.(type) {
+		case string:
+			if strings.HasSuffix(k, "_not") {
+				qstring += "-@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+			} else if strings.HasSuffix(k, "_opt") {
+				qstring += "~@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+			} else {
+				qstring += "@" + k + ":" + v.(string) + " "
+			}
+
+		case float64:
+			if strings.HasSuffix(k, "_gte") {
+				qstring += "@" + strings.TrimSuffix(k, "_gte") +
+					":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
+			} else if strings.HasSuffix(k, "_lte") {
+				qstring += "@" + strings.TrimSuffix(k, "_lte") +
+					":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
+			} else if strings.HasSuffix(k, "_btw") {
+				qstring += "@" + strings.TrimSuffix(k, "_btw") +
+					":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
+			} else {
+				qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) +
+					"," + fmt.Sprintf("%f", v.(float64)) + "] "
+			}
+		}
 	}
-	docs, _, err := client.Search(redisearch.NewQuery(qstring))
+	argsMap := c.Value("v").(postVars).v
+	//fmt.Printf("%+v\n", argsMap)
+
+	q := redisearch.NewQuery(qstring)
+
+	if lim, ok := argsMap["limit"]; ok {
+		q = q.Limit(0, int(lim.(float64)))
+	}
+
+	if verbatim, ok := argsMap["verbatim"]; ok {
+		if verbatim.(bool) {
+			q = q.SetFlags(redisearch.QueryVerbatim)
+		}
+	}
+
+	docs, _, err := client.Search(q)
 
 	if err != nil {
 		log.Fatal(err)
@@ -63,6 +113,7 @@ func FtInfo2Schema(client *redisearch.Client) error {
 	args := make(graphql.FieldConfigArgument)
 
 	for _, field := range idx.Schema.Fields {
+		//fmt.Printf("%+v\n", field)
 		if field.Type == 0 {
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
@@ -70,7 +121,48 @@ func FtInfo2Schema(client *redisearch.Client) error {
 			args[field.Name] = &graphql.ArgumentConfig{
 				Type: graphql.String,
 			}
+			args[fmt.Sprintf("%s_not", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+			args[fmt.Sprintf("%s_opt", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
 		}
+
+		if field.Type == 1 {
+			fields[field.Name] = &graphql.Field{
+				Type: graphql.Float,
+			}
+			args[field.Name] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+			args[fmt.Sprintf("%s_gte", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+			args[fmt.Sprintf("%s_lte", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.Float,
+			}
+			// TODO: handle between!
+			args[fmt.Sprintf("%s_btw", field.Name)] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+		}
+
+		// GEO TYPE
+		if field.Type == 2 {
+			// TODO: implement geo type
+		}
+
+		// TAGS
+		if field.Type == 3 {
+			fields[field.Name] = &graphql.Field{
+				Type: graphql.String,
+			}
+			args[field.Name] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+		}
+
 	}
 
 	var ftType = graphql.NewObject(
@@ -88,7 +180,7 @@ func FtInfo2Schema(client *redisearch.Client) error {
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return ftSearch(p.Args, client), nil
+						return ftSearch(p.Args, client, p.Context), nil
 					},
 				},
 			},
@@ -113,14 +205,21 @@ func main() {
 		log.Fatal(nerr)
 	}
 
+	http.HandleFunc("/docs", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprint(w, "this is where we get the docs")
+	})
+
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p postData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
 			w.WriteHeader(400)
 			return
 		}
+		c := context.Background()
+		z := postVars{v: p.Variables}
+		c = context.WithValue(c, "v", z)
 		result := graphql.Do(graphql.Params{
-			Context:        req.Context(),
+			Context:        c,
 			Schema:         schema,
 			RequestString:  p.Query,
 			VariableValues: p.Variables,
@@ -132,6 +231,6 @@ func main() {
 	})
 
 	fmt.Println("Now server is running on " + args.Addr)
-	fmt.Println(`Example:  curl -X POST  -H "Content-Type: application/json"  --data '{ "variables": {"foo": 1}, "query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' http://localhost:8080/graphql`)
+	fmt.Println(`Example:  curl -X POST  -H "Content-Type: application/json"  --data '{ "variables": {"limit": 29, "verbatim": true}, "query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' http://localhost:8080/graphql`)
 	http.ListenAndServe(args.Addr, nil)
 }
