@@ -38,8 +38,8 @@ var args struct {
 }
 
 var TagScalar = graphql.NewScalar(graphql.ScalarConfig{
-	Name:        "Tag",
-	Description: "Redisearch Tag",
+	Name:        `json:"tag"`,
+	Description: `json:"tag_description"`,
 })
 
 func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
@@ -60,13 +60,17 @@ func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.
 
 		case float64:
 			if strings.HasSuffix(k, "_gte") {
-				qstring += "@" + strings.TrimSuffix(k, "_gte") + ":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
+				qstring += "@" + strings.TrimSuffix(k, "_gte") +
+					":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
 			} else if strings.HasSuffix(k, "_lte") {
-				qstring += "@" + strings.TrimSuffix(k, "_lte") + ":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
+				qstring += "@" + strings.TrimSuffix(k, "_lte") +
+					":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
 			} else if strings.HasSuffix(k, "_btw") {
-				qstring += "@" + strings.TrimSuffix(k, "_btw") + ":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
+				qstring += "@" + strings.TrimSuffix(k, "_btw") +
+					":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
 			} else {
-				qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) + "," + fmt.Sprintf("%f", v.(float64)) + "] "
+				qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) +
+					"," + fmt.Sprintf("%f", v.(float64)) + "] "
 			}
 		}
 	}
@@ -144,14 +148,20 @@ func FtInfo2Schema(client *redisearch.Client) error {
 			}
 		}
 
-		//if field.Type == 3 {
-		//	fields[field.Name] = &graphql.Field{
-		//		Type: TagScalar,
-		//	}
-		//	args[field.Name] = &graphql.ArgumentConfig{
-		//		Type: graphql.String,
-		//	}
-		//}
+		// GEO TYPE
+		if field.Type == 2 {
+			// TODO: implement geo type
+		}
+
+		// TAGS
+		if field.Type == 3 {
+			fields[field.Name] = &graphql.Field{
+				Type: graphql.String,
+			}
+			args[field.Name] = &graphql.ArgumentConfig{
+				Type: graphql.String,
+			}
+		}
 
 	}
 
@@ -194,6 +204,10 @@ func main() {
 	if nerr != nil {
 		log.Fatal(nerr)
 	}
+
+	http.HandleFunc("/docs", func(w http.ResponseWriter, req *http.Request) {
+		fmt.Fprint(w, "this is where we get the docs")
+	})
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p postData
