@@ -63,66 +63,71 @@ var TagScalar = graphql.NewScalar(graphql.ScalarConfig{
 
 func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
 	var res []map[string]interface{}
-
 	qstring := ""
 
-	for k, v := range args {
-		switch v.(type) {
-		case string:
-			if strings.HasSuffix(k, "_not") {
-				qstring += "-@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
-			} else if strings.HasSuffix(k, "_opt") {
-				qstring += "~@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
-			} else {
-				qstring += "@" + k + ":" + v.(string) + " "
+	if args["raw_query"] == nil {
+
+		for k, v := range args {
+			switch v.(type) {
+			case string:
+				if strings.HasSuffix(k, "_not") {
+					qstring += "-@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+				} else if strings.HasSuffix(k, "_opt") {
+					qstring += "~@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+				} else {
+					qstring += "@" + k + ":" + v.(string) + " "
+				}
+
+			// this picks up any TAG queries
+			case []interface{}:
+				myPrefixTags := ""
+				myFieldTags := k
+				if strings.HasSuffix(k, "_not") {
+					myPrefixTags = "-"
+					myFieldTags = strings.TrimSuffix(k, "_not")
+				} else if strings.HasSuffix(k, "_opt") {
+					myPrefixTags = "~"
+					myFieldTags = strings.TrimSuffix(k, "_opt")
+				}
+				joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+				qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
+
+			// this picks up any GEO queries
+			case map[string]interface{}:
+				myPrefix := ""
+				myField := k
+				if strings.HasSuffix(k, "_not") {
+					myPrefix = "-"
+					myField = strings.TrimSuffix(k, "_not")
+				} else if strings.HasSuffix(k, "_opt") {
+					myPrefix = "~"
+					myField = strings.TrimSuffix(k, "_opt")
+				}
+				qstring += fmt.Sprintf("%s@%s: [%f,%f,%f,%s] ", myPrefix,
+					myField, v.(map[string]interface{})["lon"].(float64),
+					v.(map[string]interface{})["lat"].(float64),
+					v.(map[string]interface{})["radius"].(float64),
+					v.(map[string]interface{})["unit"].(string))
+
+			case float64:
+				if strings.HasSuffix(k, "_gte") {
+					qstring += "@" + strings.TrimSuffix(k, "_gte") +
+						":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
+				} else if strings.HasSuffix(k, "_lte") {
+					qstring += "@" + strings.TrimSuffix(k, "_lte") +
+						":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
+				} else if strings.HasSuffix(k, "_btw") {
+					qstring += "@" + strings.TrimSuffix(k, "_btw") +
+						":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
+				} else {
+					qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) +
+						"," + fmt.Sprintf("%f", v.(float64)) + "] "
+				}
 			}
 
-		// this picks up any TAG queries
-		case []interface{}:
-			myPrefixTags := ""
-			myFieldTags := k
-			if strings.HasSuffix(k, "_not") {
-				myPrefixTags = "-"
-				myFieldTags = strings.TrimSuffix(k, "_not")
-			} else if strings.HasSuffix(k, "_opt") {
-				myPrefixTags = "~"
-				myFieldTags = strings.TrimSuffix(k, "_opt")
-			}
-			joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-			qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
-		// this picks up any GEO queries
-		case map[string]interface{}:
-			myPrefix := ""
-			myField := k
-			if strings.HasSuffix(k, "_not") {
-				myPrefix = "-"
-				myField = strings.TrimSuffix(k, "_not")
-			} else if strings.HasSuffix(k, "_opt") {
-				myPrefix = "~"
-				myField = strings.TrimSuffix(k, "_opt")
-			}
-			qstring += fmt.Sprintf("%s@%s: [%f,%f,%f,%s] ", myPrefix,
-				myField, v.(map[string]interface{})["lon"].(float64),
-				v.(map[string]interface{})["lat"].(float64),
-				v.(map[string]interface{})["radius"].(float64),
-				v.(map[string]interface{})["unit"].(string))
-
-		case float64:
-			if strings.HasSuffix(k, "_gte") {
-				qstring += "@" + strings.TrimSuffix(k, "_gte") +
-					":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
-			} else if strings.HasSuffix(k, "_lte") {
-				qstring += "@" + strings.TrimSuffix(k, "_lte") +
-					":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
-			} else if strings.HasSuffix(k, "_btw") {
-				qstring += "@" + strings.TrimSuffix(k, "_btw") +
-					":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
-			} else {
-				qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) +
-					"," + fmt.Sprintf("%f", v.(float64)) + "] "
-			}
 		}
-
+	} else {
+		qstring = args["raw_query"].(string)
 	}
 	argsMap := c.Value("v").(postVars).v
 
@@ -160,6 +165,11 @@ func FtInfo2Schema(client *redisearch.Client) error {
 
 	fields := make(graphql.Fields)
 	args := make(graphql.FieldConfigArgument)
+
+	// Handle the case of a raw query
+	args["raw_query"] = &graphql.ArgumentConfig{
+		Type: graphql.String,
+	}
 
 	for _, field := range idx.Schema.Fields {
 		if field.Type == 0 {
@@ -242,6 +252,13 @@ func FtInfo2Schema(client *redisearch.Client) error {
 			Name: "Query",
 			Fields: graphql.Fields{
 				"ft": &graphql.Field{
+					Type: graphql.NewList(ftType),
+					Args: args,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						return ftSearch(p.Args, client, p.Context), nil
+					},
+				},
+				"raw": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
