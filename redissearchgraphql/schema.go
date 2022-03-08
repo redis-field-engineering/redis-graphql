@@ -1,22 +1,38 @@
 package redissearchgraphql
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/graphql-go/graphql"
-	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
 )
 
-func FtInfo2Schema(client *redisearch.Client) error {
+var tagInput = graphql.NewList(graphql.String)
+var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "geo",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"unit": &graphql.InputObjectFieldConfig{
+			Type:         graphql.String,
+			DefaultValue: "km",
+		},
+		"lat": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+		"lon": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+		"radius": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+	}})
+
+func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, error) {
 	idx, err := client.Info()
+	var schema graphql.Schema
 
 	if err != nil {
-		log.Fatal("cannot do info on index:"+args.RedisIndex, " Error: ", err)
+		log.Fatal("cannot do info on index:"+searchidx, " Error: ", err)
 	}
 
 	fields := make(graphql.Fields)
@@ -111,14 +127,14 @@ func FtInfo2Schema(client *redisearch.Client) error {
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return rsq.FtSearch(p.Args, client, p.Context), nil
+						return FtSearch(p.Args, client, p.Context), nil
 					},
 				},
 				"raw": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return rsq.FtSearch(p.Args, client, p.Context), nil
+						return FtSearch(p.Args, client, p.Context), nil
 					},
 				},
 			},
@@ -128,5 +144,5 @@ func FtInfo2Schema(client *redisearch.Client) error {
 			Query: queryType,
 		},
 	)
-	return nil
+	return schema, nil
 }

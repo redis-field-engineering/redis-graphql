@@ -17,36 +17,7 @@ import (
 /* Shared data variables to allow dynamic reloads
 /*****************************************************************************/
 
-type postVars struct {
-	v map[string]interface{}
-}
-
-type postData struct {
-	Query     string                 `json:"query"`
-	Operation string                 `json:"operation"`
-	Variables map[string]interface{} `json:"variables"`
-}
-
 var schema graphql.Schema
-
-var tagInput = graphql.NewList(graphql.String)
-var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
-	Name: "geo",
-	Fields: graphql.InputObjectConfigFieldMap{
-		"unit": &graphql.InputObjectFieldConfig{
-			Type:         graphql.String,
-			DefaultValue: "km",
-		},
-		"lat": &graphql.InputObjectFieldConfig{
-			Type: graphql.NewNonNull(graphql.Float),
-		},
-		"lon": &graphql.InputObjectFieldConfig{
-			Type: graphql.NewNonNull(graphql.Float),
-		},
-		"radius": &graphql.InputObjectFieldConfig{
-			Type: graphql.NewNonNull(graphql.Float),
-		},
-	}})
 
 var args struct {
 	Addr          string `help:"where to listen for websocket requests" default:"localhost:8080" arg:"env:LISTEN"`
@@ -63,7 +34,7 @@ func main() {
 		fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
 		args.RedisIndex,
 	)
-	nerr := rsq.FtInfo2Schema(searchClient)
+	schema, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
 	if nerr != nil {
 		log.Fatal(nerr)
 	}
@@ -73,13 +44,13 @@ func main() {
 	})
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
-		var p postData
+		var p rsq.PostData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
 			w.WriteHeader(400)
 			return
 		}
 		c := context.Background()
-		z := postVars{v: p.Variables}
+		z := rsq.PostVars{Variables: p.Variables}
 		c = context.WithValue(c, "v", z)
 		result := graphql.Do(graphql.Params{
 			Context:        c,

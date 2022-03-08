@@ -1,4 +1,4 @@
-module github.com/redis-field-engineering/SearchQL
+module github.com/redis-field-engineering/RediSearchGraphQL
 
 go 1.17
 

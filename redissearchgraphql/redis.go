@@ -2,15 +2,11 @@ package redissearchgraphql
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
-	"github.com/alexflint/go-arg"
-	"github.com/graphql-go/graphql"
 )
 
 func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
@@ -81,7 +77,7 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 	} else {
 		qstring = args["raw_query"].(string)
 	}
-	argsMap := c.Value("v").(postVars).v
+	argsMap := c.Value("v").(PostVars).Variables
 
 	q := redisearch.NewQuery(qstring)
 
