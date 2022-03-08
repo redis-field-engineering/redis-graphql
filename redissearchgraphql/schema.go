@@ -8,6 +8,7 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
+var betweenInput = graphql.NewList(graphql.Float)
 var tagInput = graphql.NewList(graphql.String)
 var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 	Name: "geo",
@@ -27,9 +28,10 @@ var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 		},
 	}})
 
-func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, error) {
+func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, SchemaDocs, error) {
 	idx, err := client.Info()
 	var schema graphql.Schema
+	var docs SchemaDocs
 
 	if err != nil {
 		log.Fatal("cannot do info on index:"+searchidx, " Error: ", err)
@@ -44,7 +46,11 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	}
 
 	for _, field := range idx.Schema.Fields {
+
+		// Strings
 		if field.Type == 0 {
+			docs.Strings = append(docs.Strings, field.Name)
+			docs.StringSuffix = append(docs.StringSuffix, "not", "opt")
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
 			}
@@ -59,7 +65,10 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			}
 		}
 
+		// Numeric
 		if field.Type == 1 {
+			docs.Floats = append(docs.Floats, field.Name)
+			docs.FloatSuffix = append(docs.FloatSuffix, "gte", "lte", "bte")
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.Float,
 			}
@@ -73,13 +82,15 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 				Type: graphql.Float,
 			}
 			// TODO: handle between!
-			args[fmt.Sprintf("%s_btw", field.Name)] = &graphql.ArgumentConfig{
-				Type: graphql.String,
+			args[fmt.Sprintf("%s_bte", field.Name)] = &graphql.ArgumentConfig{
+				Type: betweenInput,
 			}
 		}
 
 		// GEO TYPE
 		if field.Type == 2 {
+			docs.Geos = append(docs.Geos, field.Name)
+			docs.GeoSuffix = append(docs.GeoSuffix, "not", "opt")
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
 			}
@@ -96,6 +107,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 
 		// TAGS
 		if field.Type == 3 {
+			docs.Tags = append(docs.Tags, field.Name)
+			docs.TagSuffix = append(docs.TagSuffix, "not", "opt")
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
 			}
@@ -144,5 +157,5 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			Query: queryType,
 		},
 	)
-	return schema, nil
+	return schema, docs, nil
 }

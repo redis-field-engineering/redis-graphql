@@ -17,7 +17,8 @@ import (
 /* Shared data variables to allow dynamic reloads
 /*****************************************************************************/
 
-var schema graphql.Schema
+//var schema graphql.Schema
+//var docs rsq.SchemaDocs
 
 var args struct {
 	Addr          string `help:"where to listen for websocket requests" default:"localhost:8080" arg:"env:LISTEN"`
@@ -34,14 +35,12 @@ func main() {
 		fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
 		args.RedisIndex,
 	)
-	schema, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
+	schema, docs, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
 	if nerr != nil {
 		log.Fatal(nerr)
 	}
 
-	http.HandleFunc("/docs", func(w http.ResponseWriter, req *http.Request) {
-		fmt.Fprint(w, "this is where we get the docs")
-	})
+	http.HandleFunc("/docs", docs.ServeDocs)
 
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p rsq.PostData

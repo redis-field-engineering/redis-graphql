@@ -64,7 +64,8 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 				} else if strings.HasSuffix(k, "_lte") {
 					qstring += "@" + strings.TrimSuffix(k, "_lte") +
 						":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
-				} else if strings.HasSuffix(k, "_btw") {
+					//  TODO fix the bte
+				} else if strings.HasSuffix(k, "_bte") {
 					qstring += "@" + strings.TrimSuffix(k, "_btw") +
 						":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
 				} else {
