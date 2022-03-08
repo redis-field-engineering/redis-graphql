@@ -29,6 +29,25 @@ type postData struct {
 
 var schema graphql.Schema
 
+var tagInput = graphql.NewList(graphql.String)
+var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
+	Name: "geo",
+	Fields: graphql.InputObjectConfigFieldMap{
+		"unit": &graphql.InputObjectFieldConfig{
+			Type:         graphql.String,
+			DefaultValue: "km",
+		},
+		"lat": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+		"lon": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+		"radius": &graphql.InputObjectFieldConfig{
+			Type: graphql.NewNonNull(graphql.Float),
+		},
+	}})
+
 var args struct {
 	Addr          string `help:"where to listen for websocket requests" default:"localhost:8080" arg:"env:LISTEN"`
 	RedisServer   string `help:"Redis to connect to" default:"localhost" arg:"--redis-host, -s, env:REDIS_SERVER"`
@@ -58,6 +77,36 @@ func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.
 				qstring += "@" + k + ":" + v.(string) + " "
 			}
 
+		// this picks up any TAG queries
+		case []interface{}:
+			myPrefixTags := ""
+			myFieldTags := k
+			if strings.HasSuffix(k, "_not") {
+				myPrefixTags = "-"
+				myFieldTags = strings.TrimSuffix(k, "_not")
+			} else if strings.HasSuffix(k, "_opt") {
+				myPrefixTags = "~"
+				myFieldTags = strings.TrimSuffix(k, "_opt")
+			}
+			joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+			qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
+		// this picks up any GEO queries
+		case map[string]interface{}:
+			myPrefix := ""
+			myField := k
+			if strings.HasSuffix(k, "_not") {
+				myPrefix = "-"
+				myField = strings.TrimSuffix(k, "_not")
+			} else if strings.HasSuffix(k, "_opt") {
+				myPrefix = "~"
+				myField = strings.TrimSuffix(k, "_opt")
+			}
+			qstring += fmt.Sprintf("%s@%s: [%f,%f,%f,%s] ", myPrefix,
+				myField, v.(map[string]interface{})["lon"].(float64),
+				v.(map[string]interface{})["lat"].(float64),
+				v.(map[string]interface{})["radius"].(float64),
+				v.(map[string]interface{})["unit"].(string))
+
 		case float64:
 			if strings.HasSuffix(k, "_gte") {
 				qstring += "@" + strings.TrimSuffix(k, "_gte") +
@@ -73,9 +122,9 @@ func ftSearch(args map[string]interface{}, client *redisearch.Client, c context.
 					"," + fmt.Sprintf("%f", v.(float64)) + "] "
 			}
 		}
+
 	}
 	argsMap := c.Value("v").(postVars).v
-	//fmt.Printf("%+v\n", argsMap)
 
 	q := redisearch.NewQuery(qstring)
 
@@ -113,7 +162,6 @@ func FtInfo2Schema(client *redisearch.Client) error {
 	args := make(graphql.FieldConfigArgument)
 
 	for _, field := range idx.Schema.Fields {
-		//fmt.Printf("%+v\n", field)
 		if field.Type == 0 {
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
@@ -150,7 +198,18 @@ func FtInfo2Schema(client *redisearch.Client) error {
 
 		// GEO TYPE
 		if field.Type == 2 {
-			// TODO: implement geo type
+			fields[field.Name] = &graphql.Field{
+				Type: graphql.String,
+			}
+			args[field.Name] = &graphql.ArgumentConfig{
+				Type: geoInputObject,
+			}
+			args[fmt.Sprintf("%s_not", field.Name)] = &graphql.ArgumentConfig{
+				Type: geoInputObject,
+			}
+			args[fmt.Sprintf("%s_opt", field.Name)] = &graphql.ArgumentConfig{
+				Type: geoInputObject,
+			}
 		}
 
 		// TAGS
@@ -159,7 +218,13 @@ func FtInfo2Schema(client *redisearch.Client) error {
 				Type: graphql.String,
 			}
 			args[field.Name] = &graphql.ArgumentConfig{
-				Type: graphql.String,
+				Type: tagInput,
+			}
+			args[fmt.Sprintf("%s_not", field.Name)] = &graphql.ArgumentConfig{
+				Type: tagInput,
+			}
+			args[fmt.Sprintf("%s_opt", field.Name)] = &graphql.ArgumentConfig{
+				Type: tagInput,
 			}
 		}
 
