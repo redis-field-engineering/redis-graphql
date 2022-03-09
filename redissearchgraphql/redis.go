@@ -3,13 +3,12 @@ package redissearchgraphql
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 )
 
-func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) []map[string]interface{} {
+func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	var res []map[string]interface{}
 	qstring := ""
 
@@ -26,19 +25,24 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 					qstring += "@" + k + ":" + v.(string) + " "
 				}
 
-			// this picks up any TAG queries
+			// this picks up any TAG or between queries
 			case []interface{}:
 				myPrefixTags := ""
 				myFieldTags := k
 				if strings.HasSuffix(k, "_not") {
 					myPrefixTags = "-"
 					myFieldTags = strings.TrimSuffix(k, "_not")
+					joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+					qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
 				} else if strings.HasSuffix(k, "_opt") {
 					myPrefixTags = "~"
 					myFieldTags = strings.TrimSuffix(k, "_opt")
+					joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+					qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
+				} else if strings.HasSuffix(k, "_bte") {
+					myFieldTags = strings.TrimSuffix(k, "_bte")
+					qstring += fmt.Sprintf("@%s: [%f, %f] ", myFieldTags, v.([]interface{})[0], v.([]interface{})[1])
 				}
-				joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-				qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
 
 			// this picks up any GEO queries
 			case map[string]interface{}:
@@ -95,12 +99,12 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 	docs, _, err := client.Search(q)
 
 	if err != nil {
-		log.Fatal(err)
+		return res, err
 	}
 
 	for _, doc := range docs {
 		res = append(res, doc.Properties)
 	}
 
-	return res
+	return res, nil
 }

@@ -140,14 +140,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return FtSearch(p.Args, client, p.Context), nil
-					},
-				},
-				"raw": &graphql.Field{
-					Type: graphql.NewList(ftType),
-					Args: args,
-					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						return FtSearch(p.Args, client, p.Context), nil
+						res, err := FtSearch(p.Args, client, p.Context)
+						return res, err
 					},
 				},
 			},
