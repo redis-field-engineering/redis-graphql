@@ -13,13 +13,6 @@ import (
 	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
 )
 
-/*****************************************************************************/
-/* Shared data variables to allow dynamic reloads
-/*****************************************************************************/
-
-//var schema graphql.Schema
-//var docs rsq.SchemaDocs
-
 var args struct {
 	Addr          string `help:"where to listen for websocket requests" default:"localhost:8080" arg:"env:LISTEN"`
 	RedisServer   string `help:"Redis to connect to" default:"localhost" arg:"--redis-host, -s, env:REDIS_SERVER"`
@@ -63,7 +56,6 @@ func main() {
 		}
 	})
 
-	fmt.Println("Now server is running on " + args.Addr)
-	fmt.Println(`Example:  curl -X POST  -H "Content-Type: application/json"  --data '{ "variables": {"limit": 29, "verbatim": true}, "query": "{ ft(hqstate:\"ca\", hqcity:\"san\", sector: \"Technology\") { company,ceo,sector,hqcity,hqstate } }" }' http://localhost:8080/graphql`)
+	fmt.Println("Server is running on " + args.Addr + "and providing data from index: " + args.RedisIndex)
 	http.ListenAndServe(args.Addr, nil)
 }

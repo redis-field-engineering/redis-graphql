@@ -32,6 +32,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	idx, err := client.Info()
 	var schema graphql.Schema
 	var docs SchemaDocs
+	docs = *NewSchemaDocs()
 
 	if err != nil {
 		log.Fatal("cannot do info on index:"+searchidx, " Error: ", err)
@@ -51,6 +52,9 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		if field.Type == 0 {
 			docs.Strings = append(docs.Strings, field.Name)
 			docs.StringSuffix = append(docs.StringSuffix, "not", "opt")
+			docs.FieldDocs[field.Name] = "Find documents where " + field.Name + " == STRING"
+			docs.FieldDocs[fmt.Sprintf("%s_not", field.Name)] = "Find documents where " + field.Name + " != STRING"
+			docs.FieldDocs[fmt.Sprintf("%s_opt", field.Name)] = "Optionally find documents where " + field.Name + " == STRING"
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
 			}
@@ -69,6 +73,10 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		if field.Type == 1 {
 			docs.Floats = append(docs.Floats, field.Name)
 			docs.FloatSuffix = append(docs.FloatSuffix, "gte", "lte", "bte")
+			docs.FieldDocs[field.Name] = "Find documents where " + field.Name + " == NUMBER"
+			docs.FieldDocs[fmt.Sprintf("%s_gte", field.Name)] = "Find documents where " + field.Name + " >=  NUMBER"
+			docs.FieldDocs[fmt.Sprintf("%s_lte", field.Name)] = "Find documents where " + field.Name + " <= NUMBER"
+			docs.FieldDocs[fmt.Sprintf("%s_bte", field.Name)] = "Find documents where " + field.Name + " between NUMBER1 and NUMBER2"
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.Float,
 			}
@@ -91,6 +99,9 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		if field.Type == 2 {
 			docs.Geos = append(docs.Geos, field.Name)
 			docs.GeoSuffix = append(docs.GeoSuffix, "not", "opt")
+			docs.FieldDocs[field.Name] = "Find documents where " + field.Name + " is within radius of lon,lat"
+			docs.FieldDocs[fmt.Sprintf("%s_not", field.Name)] = "Find documents where " + field.Name + " is not within radius of lon,lat"
+			docs.FieldDocs[fmt.Sprintf("%s_opt", field.Name)] = "Optional find documents where " + field.Name + " is optionally within radius of lon,lat"
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,
 			}
@@ -108,6 +119,10 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		// TAGS
 		if field.Type == 3 {
 			docs.Tags = append(docs.Tags, field.Name)
+			docs.FieldDocs[field.Name] = "Find documents where " + field.Name + " == TAG"
+			docs.FieldDocs[fmt.Sprintf("%s_not", field.Name)] = "Find documents where " + field.Name + " != TAG"
+			docs.FieldDocs[fmt.Sprintf("%s_opt", field.Name)] = "Optional find documents where " + field.Name + " == TAG"
+
 			docs.TagSuffix = append(docs.TagSuffix, "not", "opt")
 			fields[field.Name] = &graphql.Field{
 				Type: graphql.String,

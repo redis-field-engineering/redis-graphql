@@ -11,12 +11,17 @@ type PostData struct {
 }
 
 type SchemaDocs struct {
-	Floats       []string `json:"floats"`
-	FloatSuffix  []string `json:"floatSuffix"`
-	Strings      []string `json:"strings"`
-	StringSuffix []string `json:"stringSuffix"`
-	Geos         []string `json:"geos"`
-	GeoSuffix    []string `json:"geoSuffix"`
-	Tags         []string `json:"tags"`
-	TagSuffix    []string `json:"tagSuffix"`
+	Floats       []string          `json:"floats"`
+	FloatSuffix  []string          `json:"floatSuffix"`
+	Strings      []string          `json:"strings"`
+	StringSuffix []string          `json:"stringSuffix"`
+	Geos         []string          `json:"geos"`
+	GeoSuffix    []string          `json:"geoSuffix"`
+	Tags         []string          `json:"tags"`
+	TagSuffix    []string          `json:"tagSuffix"`
+	FieldDocs    map[string]string `json:"fieldDocs"`
+}
+
+func NewSchemaDocs() *SchemaDocs {
+	return &SchemaDocs{FieldDocs: make(map[string]string)}
 }
