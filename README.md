@@ -9,17 +9,13 @@ Translate GraphQL queries to RediSearch
 
 The searachql queries the RediSearch server for the search schema then dynamically builds the GraphQL schema to all GraphQL clients to natively query RediSearch with the proxy handling the translation.
 
-
-### Note: This allows you to *only* search by TEXT fields now
-#### Fixes are coming
-
 ### Testing
 
 
 #### Start a redisearch docker container
 
 ```
-docker run -p 6379:6379 redislabs/redisearch:latest
+docker run -p 6379:6379 redislabs/redisearch:2.0.12
 ```
 
 #### Load some sample data
@@ -38,7 +34,12 @@ pip -r install requirements.txt
 go run searchql.go
 ```
 
-Query away!
+#### Read the auto-generated documents with sample queries
+
+[Auto-generated Documentation](http://localhost:8080/docs)
+
+
+#### Query away!
 
 ```
 curl -X POST  -H "Content-Type: application/json" \
