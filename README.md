@@ -31,7 +31,12 @@ pip -r install requirements.txt
 #### Run the proxy
 
 ```
-go run searchql.go
+# for help use -h 
+
+go run searchql.go  --redis-host redisnode.com \
+                    --redis-port 6380 \
+                    --redis-index MySearchIndex
+                  
 ```
 
 #### Read the auto-generated documents with sample queries
