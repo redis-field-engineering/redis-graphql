@@ -128,7 +128,7 @@ const dataHTML = `<!DOCTYPE html>
     <pre>
     query {
 	ft(
-	    {{ $val }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"}},
+	    {{ $val }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"},
 	    )
 	{
     	{{- range $x := $.Strings }}
