@@ -11,6 +11,7 @@ type PostData struct {
 }
 
 type SchemaDocs struct {
+	IndexName    string            `json:"indexName"`
 	Floats       []string          `json:"floats"`
 	FloatSuffix  []string          `json:"floatSuffix"`
 	Strings      []string          `json:"strings"`

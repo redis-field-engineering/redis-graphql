@@ -16,11 +16,47 @@ const dataHTML = `<!DOCTYPE html>
     <style>
     pre { background-color: black; color: white; margin-left: 80px; width: 65%; }
     p { margin-left: 65px; }
+    h1 { color: blue; margin-left: 25px; }
     h2 { color: maroon; margin-left: 40px; }
     h3 { color: green; margin-left: 60px; }
     h4 { color: black; margin-left: 70px; }
+    table {
+	border-collapse: collapse;
+	width: 50%;
+	margin-left: 80px;
+      }
+      
+      th, td {
+	text-align: left;
+	padding: 8px;
+      }
+      
+      tr:nth-child(even) {
+	background-color: #D6EEEE;
+      }
     </style>
     <body>
+
+    <h1> {{ .IndexName }} GraphQL Documentation</h1>
+
+    <h2>Fields</h2>
+    <p>Below is a list of all the fields in the index and their types that are availalbe to query or fetch.</p>
+    <table>
+    <tr><th>Field</th><th>Type</th></tr>
+    {{ range $val := .Floats }}
+    <tr><td>{{ $val }}</td><td>Numeric</td></tr>
+    {{ end }}
+    {{ range $val := .Strings }}
+    <tr><td>{{ $val }}</td><td>String</td></tr>
+    {{ end }}
+    {{ range $val := .Geos }}
+    <tr><td>{{ $val }}</td><td>Geo</td></tr>
+    {{ end }}
+    {{ range $val := .Tags }}
+    <tr><td>{{ $val }}</td><td>Tag</td></tr>
+    {{ end }}
+
+    </table>
 
     <h2>Numeric Queries</h2>
     {{ range $val := .Floats }}
@@ -42,6 +78,9 @@ const dataHTML = `<!DOCTYPE html>
     	{{- range $z := $.Geos }}
 	    {{ $z }},
     	{{- end }}
+    	{{- range $z := $.Tags }}
+	    {{ $z }},
+    	{{- end }}
 	}
     }
 </pre>
@@ -53,7 +92,11 @@ const dataHTML = `<!DOCTYPE html>
     <pre>
     query {
 	ft(
+	    {{- if eq $val2 "bte" }}
+	    {{ $combined }}: [10, 20],
+	    {{- else }}
 	    {{ $combined }}: 3.14,
+	    {{- end }}
 	    )
 	{
     	{{- range $x := $.Strings }}
@@ -63,6 +106,9 @@ const dataHTML = `<!DOCTYPE html>
 	    {{ $y }},
     	{{- end }}
     	{{- range $z := $.Geos }}
+	    {{ $z }},
+    	{{- end }}
+    	{{- range $z := $.Tags }}
 	    {{ $z }},
     	{{- end }}
 	}
@@ -91,6 +137,9 @@ const dataHTML = `<!DOCTYPE html>
     	{{- range $z := $.Geos }}
 	    {{ $z }},
     	{{- end }}
+    	{{- range $z := $.Tags }}
+	    {{ $z }},
+    	{{- end }}
 	}
     }
 </pre>
@@ -112,6 +161,9 @@ const dataHTML = `<!DOCTYPE html>
 	    {{ $y }},
     	{{- end }}
     	{{- range $z := $.Geos }}
+	    {{ $z }},
+    	{{- end }}
+    	{{- range $z := $.Tags }}
 	    {{ $z }},
     	{{- end }}
 	}
@@ -140,6 +192,9 @@ const dataHTML = `<!DOCTYPE html>
     	{{- range $z := $.Geos }}
 	    {{ $z }},
     	{{- end }}
+    	{{- range $z := $.Tags }}
+	    {{ $z }},
+    	{{- end }}
 	}
     }
 </pre>
@@ -161,6 +216,9 @@ const dataHTML = `<!DOCTYPE html>
 	    {{ $y }},
     	{{- end }}
     	{{- range $z := $.Geos }}
+	    {{ $z }},
+    	{{- end }}
+    	{{- range $z := $.Tags }}
 	    {{ $z }},
     	{{- end }}
 	}
@@ -190,6 +248,9 @@ const dataHTML = `<!DOCTYPE html>
     	{{- range $z := $.Geos }}
 	    {{ $z }},
     	{{- end }}
+    	{{- range $z := $.Tags }}
+	    {{ $z }},
+    	{{- end }}
 	}
     }
 </pre>
@@ -212,6 +273,9 @@ const dataHTML = `<!DOCTYPE html>
 	    {{ $y }},
     	{{- end }}
     	{{- range $z := $.Geos }}
+	    {{ $z }},
+    	{{- end }}
+    	{{- range $z := $.Tags }}
 	    {{ $z }},
     	{{- end }}
 	}
