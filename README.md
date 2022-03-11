@@ -1,4 +1,4 @@
-## Redisearch GraphQL Proxy
+## GraphQL-Redis
 
 Translate GraphQL queries to RediSearch
 
