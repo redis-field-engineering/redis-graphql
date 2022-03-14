@@ -11,6 +11,8 @@ import (
 func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	var res []map[string]interface{}
 	qstring := ""
+	query_conditions := []string{}
+	argsMap := c.Value("v").(PostVars).Variables
 
 	if args["raw_query"] == nil {
 
@@ -18,11 +20,11 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 			switch v.(type) {
 			case string:
 				if strings.HasSuffix(k, "_not") {
-					qstring += "-@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+					query_conditions = append(query_conditions, "-@"+strings.TrimSuffix(k, "_not")+":"+v.(string))
 				} else if strings.HasSuffix(k, "_opt") {
-					qstring += "~@" + strings.TrimSuffix(k, "_not") + ":" + v.(string) + " "
+					query_conditions = append(query_conditions, "~@"+strings.TrimSuffix(k, "_not")+":"+v.(string))
 				} else {
-					qstring += "@" + k + ":" + v.(string) + " "
+					query_conditions = append(query_conditions, "@"+k+":"+v.(string))
 				}
 
 			// this picks up any TAG or between queries
@@ -33,15 +35,15 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 					myPrefixTags = "-"
 					myFieldTags = strings.TrimSuffix(k, "_not")
 					joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-					qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
+					query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
 				} else if strings.HasSuffix(k, "_opt") {
 					myPrefixTags = "~"
 					myFieldTags = strings.TrimSuffix(k, "_opt")
 					joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-					qstring += fmt.Sprintf("%s@%s: {%s} ", myPrefixTags, myFieldTags, joined)
+					query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
 				} else if strings.HasSuffix(k, "_bte") {
 					myFieldTags = strings.TrimSuffix(k, "_bte")
-					qstring += fmt.Sprintf("@%s: [%f, %f] ", myFieldTags, v.([]interface{})[0], v.([]interface{})[1])
+					query_conditions = append(query_conditions, fmt.Sprintf("@%s:[%f, %f]", myFieldTags, v.([]interface{})[0], v.([]interface{})[1]))
 				}
 
 			// this picks up any GEO queries
@@ -55,34 +57,38 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 					myPrefix = "~"
 					myField = strings.TrimSuffix(k, "_opt")
 				}
-				qstring += fmt.Sprintf("%s@%s: [%f,%f,%f,%s] ", myPrefix,
+				query_conditions = append(query_conditions, fmt.Sprintf("%s@%s: [%f,%f,%f,%s]", myPrefix,
 					myField, v.(map[string]interface{})["lon"].(float64),
 					v.(map[string]interface{})["lat"].(float64),
 					v.(map[string]interface{})["radius"].(float64),
-					v.(map[string]interface{})["unit"].(string))
+					v.(map[string]interface{})["unit"].(string)))
 
 			case float64:
 				if strings.HasSuffix(k, "_gte") {
-					qstring += "@" + strings.TrimSuffix(k, "_gte") +
-						":[" + fmt.Sprintf("%f", v.(float64)) + ",+inf] "
+					query_conditions = append(query_conditions, "@"+strings.TrimSuffix(k, "_gte")+
+						":["+fmt.Sprintf("%f", v.(float64))+",+inf]")
 				} else if strings.HasSuffix(k, "_lte") {
-					qstring += "@" + strings.TrimSuffix(k, "_lte") +
-						":[-inf," + fmt.Sprintf("%f", v.(float64)) + "] "
-					//  TODO fix the bte
-				} else if strings.HasSuffix(k, "_bte") {
-					qstring += "@" + strings.TrimSuffix(k, "_btw") +
-						":[-inf" + fmt.Sprintf("%f", v.(float64)) + "] "
+					query_conditions = append(query_conditions, "@"+strings.TrimSuffix(k, "_lte")+
+						":[-inf,"+fmt.Sprintf("%f", v.(float64))+"]")
 				} else {
-					qstring += "@" + k + ":[" + fmt.Sprintf("%f", v.(float64)) +
-						"," + fmt.Sprintf("%f", v.(float64)) + "] "
+					query_conditions = append(query_conditions, "@"+k+":["+fmt.Sprintf("%f", v.(float64))+
+						","+fmt.Sprintf("%f", v.(float64))+"]")
 				}
 			}
 
 		}
+
+		qstring = strings.Join(query_conditions, " ")
+
+		if ormatch, ok := argsMap["ormatch"]; ok {
+			if ormatch.(bool) {
+				qstring = "(" + strings.Join(query_conditions, " | ") + ")"
+			}
+		}
+
 	} else {
 		qstring = args["raw_query"].(string)
 	}
-	argsMap := c.Value("v").(PostVars).Variables
 
 	q := redisearch.NewQuery(qstring)
 
