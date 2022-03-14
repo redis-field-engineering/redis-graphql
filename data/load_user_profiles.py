@@ -22,13 +22,13 @@ def load_data(redis_server, redis_port, redis_password):
     load_client.create_index(
       (
           TextField('id'),
-          TextField('email'),
           TextField('username'),
           NumericField('mmr', sortable=True),
           NumericField('experience', sortable=True),
           NumericField('rating', sortable=True),
           TagField('group_tags'),
           TagField('secondary_group_tags'),
+          TagField('email'),
           TagField('blacklist_tags'),
           TagField('play_style_tags'),
           GeoField('location'),

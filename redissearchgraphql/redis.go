@@ -44,6 +44,9 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 				} else if strings.HasSuffix(k, "_bte") {
 					myFieldTags = strings.TrimSuffix(k, "_bte")
 					query_conditions = append(query_conditions, fmt.Sprintf("@%s:[%f, %f]", myFieldTags, v.([]interface{})[0], v.([]interface{})[1]))
+				} else {
+					joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+					query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
 				}
 
 			// this picks up any GEO queries
