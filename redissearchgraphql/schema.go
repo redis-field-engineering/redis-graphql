@@ -138,6 +138,14 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			}
 		}
 
+		// Special fields that are used for aggregations
+		fields["_agg_groupby_count"] = &graphql.Field{
+			Type: graphql.Int,
+		}
+		args["_agg_groupby"] = &graphql.ArgumentConfig{
+			Type: graphql.String,
+		}
+
 	}
 
 	var ftType = graphql.NewObject(
@@ -156,6 +164,14 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 						res, err := FtSearch(p.Args, client, p.Context)
+						return res, err
+					},
+				},
+				"agg_count": &graphql.Field{
+					Type: graphql.NewList(ftType),
+					Args: args,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						res, err := FtAggCount(p.Args, client, p.Context)
 						return res, err
 					},
 				},
