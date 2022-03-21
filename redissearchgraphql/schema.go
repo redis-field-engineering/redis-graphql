@@ -142,8 +142,20 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		fields["_agg_groupby_count"] = &graphql.Field{
 			Type: graphql.Int,
 		}
+		fields["_agg_groupby_num"] = &graphql.Field{
+			Type: graphql.Float,
+		}
 		args["_agg_groupby"] = &graphql.ArgumentConfig{
 			Type: graphql.String,
+		}
+		args["_agg_num_field"] = &graphql.ArgumentConfig{
+			Type: graphql.String,
+		}
+		args["_agg_num_function"] = &graphql.ArgumentConfig{
+			Type: graphql.String,
+		}
+		args["_agg_num_quantile"] = &graphql.ArgumentConfig{
+			Type: graphql.Float,
 		}
 
 	}
@@ -172,6 +184,14 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 						res, err := FtAggCount(p.Args, client, p.Context)
+						return res, err
+					},
+				},
+				"agg_numgroup": &graphql.Field{
+					Type: graphql.NewList(ftType),
+					Args: args,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						res, err := FtAggNumGroup(p.Args, client, p.Context)
 						return res, err
 					},
 				},
