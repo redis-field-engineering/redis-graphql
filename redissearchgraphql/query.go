@@ -29,22 +29,25 @@ func QueryBuilder(args, argsMap map[string]interface{}, wildcard bool) (string, 
 				case []interface{}:
 					myPrefixTags := ""
 					myFieldTags := k
-					if strings.HasSuffix(k, "_not") {
-						myPrefixTags = "-"
-						myFieldTags = strings.TrimSuffix(k, "_not")
-						joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-						query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
-					} else if strings.HasSuffix(k, "_opt") {
-						myPrefixTags = "~"
-						myFieldTags = strings.TrimSuffix(k, "_opt")
-						joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-						query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
-					} else if strings.HasSuffix(k, "_bte") {
-						myFieldTags = strings.TrimSuffix(k, "_bte")
-						query_conditions = append(query_conditions, fmt.Sprintf("@%s:[%f, %f]", myFieldTags, v.([]interface{})[0], v.([]interface{})[1]))
-					} else {
-						joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
-						query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
+					// we don't want to pick up the raw_sggregation plan here
+					if k != "raw_agg_plan" {
+						if strings.HasSuffix(k, "_not") {
+							myPrefixTags = "-"
+							myFieldTags = strings.TrimSuffix(k, "_not")
+							joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+							query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
+						} else if strings.HasSuffix(k, "_opt") {
+							myPrefixTags = "~"
+							myFieldTags = strings.TrimSuffix(k, "_opt")
+							joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+							query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
+						} else if strings.HasSuffix(k, "_bte") {
+							myFieldTags = strings.TrimSuffix(k, "_bte")
+							query_conditions = append(query_conditions, fmt.Sprintf("@%s:[%f, %f]", myFieldTags, v.([]interface{})[0], v.([]interface{})[1]))
+						} else {
+							joined := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(v.([]interface{}))), "|"), "[]")
+							query_conditions = append(query_conditions, fmt.Sprintf("%s@%s:{%s}", myPrefixTags, myFieldTags, joined))
+						}
 					}
 
 				// this picks up any GEO queries

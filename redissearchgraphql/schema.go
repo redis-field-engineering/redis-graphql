@@ -10,6 +10,7 @@ import (
 
 var betweenInput = graphql.NewList(graphql.Float)
 var tagInput = graphql.NewList(graphql.String)
+var rawAggPlan = graphql.NewList(graphql.String)
 var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 	Name: "geo",
 	Fields: graphql.InputObjectConfigFieldMap{
@@ -157,6 +158,9 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		args["_agg_num_quantile"] = &graphql.ArgumentConfig{
 			Type: graphql.Float,
 		}
+		args["raw_agg_plan"] = &graphql.ArgumentConfig{
+			Type: rawAggPlan,
+		}
 
 	}
 
@@ -192,6 +196,14 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 						res, err := FtAggNumGroup(p.Args, client, p.Context)
+						return res, err
+					},
+				},
+				"agg_raw": &graphql.Field{
+					Type: graphql.NewList(ftType),
+					Args: args,
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						res, err := FtAggRaw(p.Args, client, p.Context)
 						return res, err
 					},
 				},

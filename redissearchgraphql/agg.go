@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
+	"github.com/gomodule/redigo/redis"
 )
 
 func FtAggCount(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
@@ -80,6 +81,44 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 	if lim, ok := argsMap["limit"]; ok {
 		q1 = q1.Limit(0, int(lim.(float64)))
 	}
+
+	docs, _, err := client.Aggregate(q1)
+
+	if err != nil {
+		return res, err
+	}
+
+	for _, doc := range docs {
+		if len(doc) == 4 {
+			res = append(res, map[string]interface{}{doc[0]: doc[1], doc[2]: doc[3]})
+		}
+	}
+
+	return res, nil
+}
+
+func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+	var res []map[string]interface{}
+	var aggPlan redis.Args
+	q1 := redisearch.NewAggregateQuery()
+	argsMap := c.Value("v").(PostVars).Variables
+
+	qstring, err := QueryBuilder(args, argsMap, true)
+	if err != nil {
+		return res, err
+	}
+
+	q1.Query = redisearch.NewQuery(qstring)
+
+	if lim, ok := argsMap["limit"]; ok {
+		q1 = q1.Limit(0, int(lim.(float64)))
+	}
+
+	for _, y := range args["raw_agg_plan"].([]interface{}) {
+		aggPlan = aggPlan.Add(y)
+	}
+
+	q1.AggregatePlan = aggPlan
 
 	docs, _, err := client.Aggregate(q1)
 
