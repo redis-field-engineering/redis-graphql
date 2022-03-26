@@ -15,7 +15,7 @@ The searachql queries the RediSearch server for the search schema then dynamical
 #### Start a redisearch docker container
 
 ```
-docker run -p 6379:6379 redislabs/redisearch:2.0.12
+docker-compose up
 ```
 
 #### Load some sample data
