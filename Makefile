@@ -19,7 +19,7 @@ linuxbuild:
 	GOOS=linux GOARCH=amd64 go build $(GOFILES)
 
 docker:
-	docker build -t maguec/es-redis-proxy .
+	docker build -t maguec/graphql-redis .
 
 test:
 	go test -v
