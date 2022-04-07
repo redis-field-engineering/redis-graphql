@@ -1,6 +1,6 @@
 # GraphQL-Redis
 
-A GraphQL server backed by Redis
+A [GraphQL](https://graphql.org/) server backed by Redis
 
 ## Features
 
@@ -10,6 +10,7 @@ A GraphQL server backed by Redis
 - Negative and optional matches
 - Aggregate data for reporting
 - Geographic matching
+- Only minimal configuration required
 
 
 ## How this works
@@ -44,7 +45,7 @@ HSET user:jennifer82 username jennifer82  rating 591  email jennifer.lewis@examp
 FT.CREATE Gamers ON HASH PREFIX 1 user: SCHEMA username TEXT location GEO SORTABLE rating NUMERIC SORTABLE playstyle TAG email TAG
 ```
 
-See [Tips and Tricks](docs/SchemaTipsAndTricks.md) for more detailed information on creating a Redisearch schema
+See [Tips and Tricks](.docs/SchemaTipsAndTricks.md) for more detailed information on creating a Redisearch schema
 
 ### Run the GraphQL server and point at the index
 
