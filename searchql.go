@@ -56,6 +56,6 @@ func main() {
 		}
 	})
 
-	fmt.Println("Server is running on " + args.Addr + "and providing data from index: " + args.RedisIndex)
+	fmt.Println("Server is running on " + args.Addr + " and providing data from index: " + args.RedisIndex)
 	http.ListenAndServe(args.Addr, nil)
 }
