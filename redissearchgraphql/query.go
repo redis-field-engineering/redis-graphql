@@ -86,7 +86,7 @@ func QueryBuilder(args, argsMap map[string]interface{}, wildcard bool) (string, 
 
 			if ormatch, ok := argsMap["ormatch"]; ok {
 				if ormatch.(bool) {
-					qstring = "(" + strings.Join(query_conditions, " | ") + ")"
+					qstring = "(" + strings.Join(query_conditions, ")|(") + ")"
 				}
 			}
 

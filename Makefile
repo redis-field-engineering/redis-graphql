@@ -22,4 +22,4 @@ docker:
 	docker build -t maguec/graphql-redis .
 
 test:
-	go test -v
+	go test -v ./...

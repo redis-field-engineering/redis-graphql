@@ -60,8 +60,8 @@ func TestOrQuery(t *testing.T) {
 	if err != nil {
 		t.Log("Or query returns err: ", err)
 	}
-	if !(reflect.DeepEqual(qstring, "(@field1:value1 | @field2:value2)") || reflect.DeepEqual(qstring, "(@field2:value2 | @field1:value1)")) {
-		t.Error("And Query should return '*' empty but returns: ", qstring)
+	if !(reflect.DeepEqual(qstring, "(@field1:value1)|(@field2:value2)") || reflect.DeepEqual(qstring, "(@field2:value2)|(@field1:value1)")) {
+		t.Error("Or Query should return '(A)|(B)' empty but returns: ", qstring)
 	}
 }
 
