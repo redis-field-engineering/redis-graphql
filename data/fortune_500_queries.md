@@ -26,7 +26,7 @@ Count all technology companies not headquarted in CA or NY and group and count b
 ```
    query {
         agg_count(
-            hqstate_not: "ca|ny"
+            hqstate_not: "(ca|ny)"
             tags: ["technology"],
             _agg_groupby: "hqstate",
             )

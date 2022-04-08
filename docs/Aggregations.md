@@ -15,7 +15,7 @@ It requires the argument *_agg_groupby* as the field to group by and returns the
 ```
 query {
      agg_count(
-         hqstate_not: "ca|ny"
+         hqstate_not: "(ca|ny)"
          tags: ["technology"],
          _agg_groupby: "hqstate",
          )
