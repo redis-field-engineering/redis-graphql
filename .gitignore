@@ -1,4 +1,4 @@
 .venv/*
 
 dist/
-searchql
+redis-graphql
