@@ -50,7 +50,7 @@ See [Tips and Tricks](./docs/SchemaTipsAndTricks.md) for more detailed informati
 ### Run the GraphQL server and point at the index
 
 ```
-./graphql-redis --redis-host localhost --redis-port 6379 --redis-index Gamers
+./redis-graphql --redis-host localhost --redis-port 6379 --redis-index Gamers
 ```
 
 ### View the auto generated documents in browser
