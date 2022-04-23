@@ -10,6 +10,7 @@ import (
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
+	"github.com/gomodule/redigo/redis"
 	"github.com/graphql-go/graphql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
@@ -30,9 +31,17 @@ func main() {
 	// Initialize Prometheus histogram and summary metrics
 	rsq.InitPrometheus()
 
+	// Initialize RediSearch client
+	pool := &redis.Pool{Dial: func() (redis.Conn, error) {
+		return redis.Dial(
+			"tcp",
+			fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
+			redis.DialPassword(args.RedisPassword))
+	}}
+
 	// Build the Redis Client for searching
-	searchClient := redisearch.NewClient(
-		fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
+	searchClient := redisearch.NewClientFromPool(
+		pool,
 		args.RedisIndex,
 	)
 
