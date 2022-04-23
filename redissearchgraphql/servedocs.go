@@ -8,6 +8,7 @@ import (
 
 var dataTempl = template.Must(template.New("").Parse(dataHTML))
 
+// dataHTML is the HTML template for the docs page
 const dataHTML = `<!DOCTYPE html>
 <html lang="en">
     <head>
@@ -320,6 +321,7 @@ const dataHTML = `<!DOCTYPE html>
 </html>
 `
 
+// ServeDocs generates the documentation for the schema and displays using the template above
 func (d *SchemaDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
 	promDocsViewCount.Inc()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -328,9 +330,4 @@ func (d *SchemaDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		fmt.Println(err)
 	}
-}
-
-func ServDocs() string {
-	html := "<html>manamana</html>"
-	return html
 }

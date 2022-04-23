@@ -6,6 +6,10 @@ import (
 	"github.com/RediSearch/redisearch-go/redisearch"
 )
 
+// FtSearch is the the most basic search query.
+// Given a list of fields detailed from the docs page http://localhost:8080/docs
+// it will return a JSON array of results matching those queries
+// see https://redis.io/commands/ft.search for more information
 func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	promFtSearchCount.Inc()
 	var res []map[string]interface{}

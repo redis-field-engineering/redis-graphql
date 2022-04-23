@@ -5,9 +5,12 @@ import (
 	"strings"
 )
 
+// QueryBuilder builds the RediSearch query from the GraphQL arguments
 func QueryBuilder(args, argsMap map[string]interface{}, wildcard bool) (string, error) {
 	qstring := ""
 	query_conditions := []string{}
+
+	// If we don't have a raw_query argument, we build the query from the other arguments
 	if args["raw_query"] == nil {
 
 		for k, v := range args {
@@ -16,6 +19,7 @@ func QueryBuilder(args, argsMap map[string]interface{}, wildcard bool) (string, 
 				continue
 			} else {
 				switch v.(type) {
+				// Build the query conditions for TEXT types
 				case string:
 					if strings.HasSuffix(k, "_not") {
 						query_conditions = append(query_conditions, "-@"+strings.TrimSuffix(k, "_not")+":"+v.(string))
@@ -67,6 +71,7 @@ func QueryBuilder(args, argsMap map[string]interface{}, wildcard bool) (string, 
 						v.(map[string]interface{})["radius"].(float64),
 						v.(map[string]interface{})["unit"].(string)))
 
+				// Handle the Rediserch NUMERIC types
 				case float64:
 					if strings.HasSuffix(k, "_gte") {
 						query_conditions = append(query_conditions, "@"+strings.TrimSuffix(k, "_gte")+

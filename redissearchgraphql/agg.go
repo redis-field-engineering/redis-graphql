@@ -8,6 +8,11 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+// FtAggCount queries the RediSearch server for the count of documents matching the query
+// It's very similary to the SQL COUNT/GROUPBY function
+// It takes the GraphQL variables as input and returns a map of the results
+// see https://redis.io/docs/stack/search/reference/aggregations/#count
+// for count documentation
 func FtAggCount(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	promAggCountCount.Inc()
 	var res []map[string]interface{}
@@ -46,6 +51,10 @@ func FtAggCount(args map[string]interface{}, client *redisearch.Client, c contex
 	return res, nil
 }
 
+// FtAggNumGroup queries the RediSearch server and groups the results based on the numeric function
+// For more information on the numeric functions
+// see https://redis.io/docs/stack/search/reference/aggregations/#supported-groupby-reducers
+// for more information
 func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	promAggNumgroupCount.Inc()
 	var res []map[string]interface{}
@@ -101,6 +110,11 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 	return res, nil
 }
 
+// FtAggRaw add the ability to query using a raw aggregation string
+// This is useful for more complex queries that might be required
+// If returning a count be sure to name it as _agg_groupby_count
+// If returning a numeric value be sure to name it as _agg_groupby_num
+// Otherwise be sure to return args of field names see http://localhost:8080/docs
 func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
 	promAggRawCount.Inc()
 	var res []map[string]interface{}

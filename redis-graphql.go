@@ -30,17 +30,24 @@ func main() {
 	// Initialize Prometheus histogram and summary metrics
 	rsq.InitPrometheus()
 
+	// Build the Redis Client for searching
 	searchClient := redisearch.NewClient(
 		fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
 		args.RedisIndex,
 	)
+
+	// Build the graphql schema from the RediSearch Index
+	// https://redis.io/commands/ft.info/ details the index serch schema
+	// that we will map to a graphql schema
 	schema, docs, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
 	if nerr != nil {
 		log.Fatal(nerr)
 	}
 
+	// Serve the auto-generated graphql schema docs
 	http.HandleFunc("/docs", docs.ServeDocs)
 
+	// Perform all graphql queries against the schema
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p rsq.PostData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
@@ -59,7 +66,11 @@ func main() {
 			VariableValues: p.Variables,
 			OperationName:  p.Operation,
 		})
+
+		// Update Prometheus metrics allowing us to track the response time in ms
 		rsq.ObserveGraphqlDuration(time.Since(start).Milliseconds())
+
+		// If we get a bad query make sure to update the metrics
 		if result.Errors != nil {
 			rsq.IncrQueryErrors()
 		}
@@ -68,8 +79,11 @@ func main() {
 		}
 	})
 
+	// Serve the prometheus metrics
 	http.Handle("/metrics", promhttp.Handler())
 
+	// Return a 200 OK response for use as a health check
+	// TODO: Add a health check using Redis PING command
 	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`OK`))

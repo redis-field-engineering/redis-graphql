@@ -5,6 +5,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
+// Create variables for Prometheus metrics
 var (
 	promDocsViewCount = promauto.NewCounter(prometheus.CounterOpts{
 		Name: "redisgraphql_docs_count",
@@ -36,24 +37,32 @@ var (
 	})
 	promGraphqlHistogram = prometheus.NewHistogram(
 		prometheus.HistogramOpts{
-			Name:    "redisgraphql_graphql_duration_microseconds",
-			Help:    "The amount of time it takes to process a GraphQL request",
+			Name:    "redisgraphql_graphql_duration_milliseconds",
+			Help:    "The amount of time it takes to process a GraphQL request in ms",
 			Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000},
 		})
 )
 
+// IncrPromPostErrors increments the post error counter
+// It's exported to allow for top levels availability
 func IncrPromPostErrors() {
 	promPostErrorCount.Inc()
 }
 
+// IncrQueryErrors increments the post error counter
+// It's exported to allow for top levels availability
 func IncrQueryErrors() {
 	promQueryErrorCount.Inc()
 }
 
+// ObserveGraphqlDuration observes the duration of a GraphQL request for latency purposes
+// It's exported to allow for top levels availability
 func ObserveGraphqlDuration(dur int64) {
 	promGraphqlHistogram.Observe(float64(dur))
 }
 
+// InitPrometheus initializes the Prometheus metrics which is necessary for
+// for histogram and summary types
 func InitPrometheus() {
 	prometheus.MustRegister(promGraphqlHistogram)
 }

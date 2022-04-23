@@ -8,9 +8,16 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
+// betweenInput is the input for the numeric between filter
 var betweenInput = graphql.NewList(graphql.Float)
+
+// tagInput is the input for the tag filter
 var tagInput = graphql.NewList(graphql.String)
+
+// rawAggPlan is an array of strings that we use to build the raw aggregation plan
 var rawAggPlan = graphql.NewList(graphql.String)
+
+// geoInputObject is a specialized input object for the geo filter
 var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 	Name: "geo",
 	Fields: graphql.InputObjectConfigFieldMap{
@@ -29,6 +36,11 @@ var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 		},
 	}})
 
+// FtInfo2Schma uses the redisearch-go library to generate a graphql schema
+// from the redisearch index.
+// see https://redis.io/commands/ft.info/ for more information
+//   This adds some extra fields to the schema that are not part of the RediSearch schema
+//   All of the extra fields are prefixed with "_"
 func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, SchemaDocs, error) {
 	idx, err := client.Info()
 	var schema graphql.Schema
@@ -42,14 +54,17 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	fields := make(graphql.Fields)
 	args := make(graphql.FieldConfigArgument)
 
-	// Handle the case of a raw query
+	// Add a new argument "raw_query" that will allow us to pass in a raw RediSearch query
 	args["raw_query"] = &graphql.ArgumentConfig{
 		Type: graphql.String,
 	}
 
 	for _, field := range idx.Schema.Fields {
 
-		// Strings
+		// For RediSearch TEXT fields we add a new argument and field name that matches
+		// the field name in the RediSearch schema
+		// Additionally we will add _not and _opt suffixes to the field name
+		// to indicate the type of search to be performed
 		if field.Type == 0 {
 			docs.Strings = append(docs.Strings, field.Name)
 			docs.StringSuffix = append(docs.StringSuffix, "not", "opt")
@@ -70,7 +85,11 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			}
 		}
 
-		// Numeric
+		// For RediSearch NUMERIC fields we add a new argument and field name that matches
+		// the field name in the RediSearch schema
+		// _gte suffix indicates greater than or equal to
+		// _lte suffix indicates less than or equal to
+		// _bte suffix indicates between or equal to a list of 2 numbers
 		if field.Type == 1 {
 			docs.Floats = append(docs.Floats, field.Name)
 			docs.FloatSuffix = append(docs.FloatSuffix, "gte", "lte", "bte")
@@ -90,13 +109,15 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			args[fmt.Sprintf("%s_lte", field.Name)] = &graphql.ArgumentConfig{
 				Type: graphql.Float,
 			}
-			// TODO: handle between!
 			args[fmt.Sprintf("%s_bte", field.Name)] = &graphql.ArgumentConfig{
 				Type: betweenInput,
 			}
 		}
 
-		// GEO TYPE
+		// For RediSearch GEO fields we add a new argument and field name that matches
+		// the field name in the RediSearch schema
+		// This requires using the geoInputObject for search
+		// _not and _opt suffixes indicate the type of search to be performed
 		if field.Type == 2 {
 			docs.Geos = append(docs.Geos, field.Name)
 			docs.GeoSuffix = append(docs.GeoSuffix, "not", "opt")
@@ -117,7 +138,9 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			}
 		}
 
-		// TAGS
+		// For RediSearch GEO fields we add a new argument and field name that matches
+		// the field name in the RediSearch schema
+		// This requires using the tagInputObject for search
 		if field.Type == 3 {
 			docs.Tags = append(docs.Tags, field.Name)
 			docs.FieldDocs[field.Name] = "Find records where " + field.Name + " == TAG"
@@ -139,7 +162,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			}
 		}
 
-		// Special fields that are used for aggregations
+		// Add all of the specialization aggregation result fields
 		fields["_agg_groupby_count"] = &graphql.Field{
 			Type: graphql.Int,
 		}
@@ -175,6 +198,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		graphql.ObjectConfig{
 			Name: "Query",
 			Fields: graphql.Fields{
+				// Define the basic FT.SEARCH query
 				"ft": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
@@ -183,6 +207,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
+				// Define the basic FT.AGGREGATE and GROUPBY/COUNT query
 				"agg_count": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
@@ -191,6 +216,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
+				// Define the basic FT.AGGREGATE with numeric filters
 				"agg_numgroup": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
@@ -199,6 +225,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
+				// Define the raw FT.AGGREGATE query
 				"agg_raw": &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
@@ -209,6 +236,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 				},
 			},
 		})
+
+	// Set the Schema
 	schema, _ = graphql.NewSchema(
 		graphql.SchemaConfig{
 			Query: queryType,
