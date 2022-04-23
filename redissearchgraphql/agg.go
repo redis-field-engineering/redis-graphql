@@ -33,6 +33,7 @@ func FtAggCount(args map[string]interface{}, client *redisearch.Client, c contex
 	docs, _, err := client.Aggregate(q1)
 
 	if err != nil {
+		promPostErrorCount.Inc()
 		return res, err
 	}
 
@@ -87,6 +88,7 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 	docs, _, err := client.Aggregate(q1)
 
 	if err != nil {
+		promPostErrorCount.Inc()
 		return res, err
 	}
 
@@ -126,6 +128,7 @@ func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.
 	docs, _, err := client.Aggregate(q1)
 
 	if err != nil {
+		promPostErrorCount.Inc()
 		return res, err
 	}
 

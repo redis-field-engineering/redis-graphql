@@ -26,4 +26,20 @@ var (
 		Name: "redisgraphql_agg_raw_counts",
 		Help: "The total number of raw aggregations processed",
 	})
+	promQueryErrorCount = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redisgraphql_query_errrors",
+		Help: "The total number of query errors",
+	})
+	promPostErrorCount = promauto.NewCounter(prometheus.CounterOpts{
+		Name: "redisgraphql_post_errrors",
+		Help: "The total number of times the post could not be JSON decoded",
+	})
 )
+
+func IncrPromPostErrors() {
+	promPostErrorCount.Inc()
+}
+
+func IncrQueryErrors() {
+	promQueryErrorCount.Inc()
+}

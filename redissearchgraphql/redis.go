@@ -32,6 +32,7 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 	docs, _, err := client.Search(q)
 
 	if err != nil {
+		promPostErrorCount.Inc()
 		return res, err
 	}
 

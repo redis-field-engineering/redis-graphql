@@ -39,6 +39,7 @@ func main() {
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p rsq.PostData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
+			rsq.IncrPromPostErrors()
 			w.WriteHeader(400)
 			return
 		}
@@ -52,6 +53,9 @@ func main() {
 			VariableValues: p.Variables,
 			OperationName:  p.Operation,
 		})
+		if result.Errors != nil {
+			rsq.IncrQueryErrors()
+		}
 		if err := json.NewEncoder(w).Encode(result); err != nil {
 			fmt.Printf("could not write result to response: %s", err)
 		}
