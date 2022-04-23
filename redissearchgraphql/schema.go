@@ -31,7 +31,6 @@ var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 
 func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, SchemaDocs, error) {
 	idx, err := client.Info()
-	fmt.Printf("%+v\n", idx)
 	var schema graphql.Schema
 	var docs SchemaDocs = *NewSchemaDocs()
 	docs.IndexName = searchidx

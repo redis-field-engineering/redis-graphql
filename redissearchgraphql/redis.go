@@ -7,6 +7,7 @@ import (
 )
 
 func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+	promFtSearchCount.Inc()
 	var res []map[string]interface{}
 	qstring := ""
 	argsMap := c.Value("v").(PostVars).Variables

@@ -10,6 +10,7 @@ import (
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
 	"github.com/graphql-go/graphql"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
 )
 
@@ -54,6 +55,13 @@ func main() {
 		if err := json.NewEncoder(w).Encode(result); err != nil {
 			fmt.Printf("could not write result to response: %s", err)
 		}
+	})
+
+	http.Handle("/metrics", promhttp.Handler())
+
+	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte(`OK`))
 	})
 
 	fmt.Println("Server is running on " + args.Addr + " and providing data from index: " + args.RedisIndex)

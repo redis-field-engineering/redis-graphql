@@ -321,6 +321,7 @@ const dataHTML = `<!DOCTYPE html>
 `
 
 func (d *SchemaDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
+	promDocsViewCount.Inc()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	var v interface{} = d
 	err := dataTempl.Execute(w, &v)

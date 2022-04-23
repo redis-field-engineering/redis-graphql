@@ -9,6 +9,7 @@ import (
 )
 
 func FtAggCount(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+	promAggCountCount.Inc()
 	var res []map[string]interface{}
 	q1 := redisearch.NewAggregateQuery()
 	argsMap := c.Value("v").(PostVars).Variables
@@ -45,6 +46,7 @@ func FtAggCount(args map[string]interface{}, client *redisearch.Client, c contex
 }
 
 func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+	promAggNumgroupCount.Inc()
 	var res []map[string]interface{}
 	q1 := redisearch.NewAggregateQuery()
 	argsMap := c.Value("v").(PostVars).Variables
@@ -98,6 +100,7 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 }
 
 func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+	promAggRawCount.Inc()
 	var res []map[string]interface{}
 	var aggPlan redis.Args
 	q1 := redisearch.NewAggregateQuery()
