@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
@@ -23,7 +24,11 @@ var args struct {
 }
 
 func main() {
+	// Parse the command line arguments
 	arg.MustParse(&args)
+
+	// Initialize Prometheus histogram and summary metrics
+	rsq.InitPrometheus()
 
 	searchClient := redisearch.NewClient(
 		fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
@@ -46,6 +51,7 @@ func main() {
 		c := context.Background()
 		z := rsq.PostVars{Variables: p.Variables}
 		c = context.WithValue(c, "v", z)
+		start := time.Now()
 		result := graphql.Do(graphql.Params{
 			Context:        c,
 			Schema:         schema,
@@ -53,6 +59,7 @@ func main() {
 			VariableValues: p.Variables,
 			OperationName:  p.Operation,
 		})
+		rsq.ObserveGraphqlDuration(time.Since(start).Milliseconds())
 		if result.Errors != nil {
 			rsq.IncrQueryErrors()
 		}
