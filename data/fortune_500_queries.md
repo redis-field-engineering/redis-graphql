@@ -18,6 +18,50 @@ Find me all not technology companies raned betwen 100 and 150 with equity greate
     }
 ```
 
+Search for a CEO named Michael Jackson or a fuzzy match for Honeywell
+
+set variables: 
+
+```
+{"limit": 5, "ormatch": true}
+```
+
+query:
+
+```
+query {
+        ft(
+            ceo: "michael jackson",
+            company: "%honeybell%"
+        )
+        {
+            company,
+            rank,
+            ceo
+        }
+    }
+```
+
+Grab 100 companies
+
+set variable
+```
+{"limit": 100}
+```
+
+query:
+
+```
+   query {
+        ft( 
+            raw_query: "*"
+        )
+        {
+            company
+        }
+    }
+
+```
 
 ### Example aggregations
 
