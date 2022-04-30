@@ -2,7 +2,6 @@ package redissearchgraphql
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/graphql-go/graphql"
@@ -48,7 +47,7 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	docs.IndexName = searchidx
 
 	if err != nil {
-		log.Fatal("cannot do info on index:"+searchidx, " Error: ", err)
+		return schema, docs, err
 	}
 
 	fields := make(graphql.Fields)
