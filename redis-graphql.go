@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"time"
 
@@ -14,6 +13,7 @@ import (
 	"github.com/graphql-go/graphql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
+	"go.uber.org/zap"
 )
 
 var args struct {
@@ -27,6 +27,11 @@ var args struct {
 func main() {
 	// Parse the command line arguments
 	arg.MustParse(&args)
+
+	// Initialize the Logger
+	logger, _ := zap.NewProduction()
+	defer logger.Sync()
+	sugar := logger.Sugar()
 
 	// Initialize Prometheus histogram and summary metrics
 	rsq.InitPrometheus()
@@ -50,7 +55,7 @@ func main() {
 	// that we will map to a graphql schema
 	schema, docs, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
 	if nerr != nil {
-		log.Fatal(nerr)
+		sugar.Fatalw("Failed to build schema", "error", nerr)
 	}
 
 	// Serve the auto-generated graphql schema docs
@@ -60,6 +65,14 @@ func main() {
 	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p rsq.PostData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
+
+			// Log the error
+			sugar.Infow(
+				"graphql_decode_error",
+				"ip", req.RemoteAddr,
+				"path", req.URL.Path,
+				"error", err,
+			)
 			rsq.IncrPromPostErrors()
 			w.WriteHeader(400)
 			return
@@ -76,6 +89,14 @@ func main() {
 			OperationName:  p.Operation,
 		})
 
+		// Log the request
+		sugar.Infow(
+			"graphql_query",
+			"duration_ms", time.Since(start).Milliseconds(),
+			"ip", req.RemoteAddr,
+			"path", req.URL.Path,
+		)
+
 		// Update Prometheus metrics allowing us to track the response time in ms
 		rsq.ObserveGraphqlDuration(time.Since(start).Milliseconds())
 
@@ -84,7 +105,7 @@ func main() {
 			rsq.IncrQueryErrors()
 		}
 		if err := json.NewEncoder(w).Encode(result); err != nil {
-			fmt.Printf("could not write result to response: %s", err)
+			sugar.Errorw("Failed to encode response", "error", err)
 		}
 	})
 
@@ -98,6 +119,11 @@ func main() {
 		w.Write([]byte(`OK`))
 	})
 
-	fmt.Println("Server is running on " + args.Addr + " and providing data from index: " + args.RedisIndex)
+	sugar.Infow(
+		"server_started",
+		"addr", args.Addr,
+		"index", args.RedisIndex,
+	)
+
 	http.ListenAndServe(args.Addr, nil)
 }
