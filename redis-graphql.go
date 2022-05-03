@@ -10,6 +10,7 @@ import (
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/alexflint/go-arg"
 	"github.com/gomodule/redigo/redis"
+	"github.com/gorilla/mux"
 	"github.com/graphql-go/graphql"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	rsq "github.com/redis-field-engineering/RediSearchGraphQL/redissearchgraphql"
@@ -23,6 +24,11 @@ var args struct {
 	RedisPassword string `help:"Redis password" default:"" arg:"--redis-password, -a, env:REDIS_PASSWORD"`
 	RedisIndex    string `help:"RediSearch Index" default:"idx" arg:"--redis-index, -i, env:REDIS_INDEX"`
 }
+
+//func BlahHandler(w http.ResponseWriter, r *http.Request) {
+//	vars := mux.Vars(r)
+//	w.Write([]byte(vars["index"]))
+//}
 
 func main() {
 	// Parse the command line arguments
@@ -58,11 +64,16 @@ func main() {
 		sugar.Fatalw("Failed to build schema", "error", nerr)
 	}
 
+	// Setup our mux router for handling multiple Redisearch Indices
+	router := mux.NewRouter()
+
 	// Serve the auto-generated graphql schema docs
-	http.HandleFunc("/docs", docs.ServeDocs)
+	router.HandleFunc("/docs", docs.ServeDocs)
+
+	//router.HandleFunc("/docs/{index}", BlahHandler)
 
 	// Perform all graphql queries against the schema
-	http.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
+	router.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {
 		var p rsq.PostData
 		if err := json.NewDecoder(req.Body).Decode(&p); err != nil {
 
@@ -110,11 +121,11 @@ func main() {
 	})
 
 	// Serve the prometheus metrics
-	http.Handle("/metrics", promhttp.Handler())
+	router.Handle("/metrics", promhttp.Handler())
 
 	// Return a 200 OK response for use as a health check
 	// TODO: Add a health check using Redis PING command
-	http.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
+	router.HandleFunc("/", func(w http.ResponseWriter, req *http.Request) {
 		w.WriteHeader(http.StatusOK)
 		w.Write([]byte(`OK`))
 	})
@@ -125,5 +136,5 @@ func main() {
 		"index", args.RedisIndex,
 	)
 
-	http.ListenAndServe(args.Addr, nil)
+	http.ListenAndServe(args.Addr, router)
 }
