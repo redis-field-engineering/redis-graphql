@@ -53,6 +53,24 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	fields := make(graphql.Fields)
 	args := make(graphql.FieldConfigArgument)
 
+	// Setup our graphql object
+	var ftType = graphql.NewObject(
+		graphql.ObjectConfig{
+			Name:   "FT",
+			Fields: fields,
+		},
+	)
+
+	var queryType = graphql.NewObject(
+		graphql.ObjectConfig{
+			Name: "Query",
+			// If we don't define a valid set of fields the AddFeil will fail below
+			Fields: graphql.Fields{
+				"ping": &graphql.Field{
+					Type: graphql.NewList(ftType),
+				},
+			}})
+
 	// Add a new argument "raw_query" that will allow us to pass in a raw RediSearch query
 	args["raw_query"] = &graphql.ArgumentConfig{
 		Type: graphql.String,
@@ -185,56 +203,41 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		}
 
 	}
-
-	var ftType = graphql.NewObject(
-		graphql.ObjectConfig{
-			Name:   "FT",
-			Fields: fields,
+	queryType.AddFieldConfig(searchidx, &graphql.Field{
+		Type: graphql.NewList(ftType),
+		Args: args,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			res, err := FtSearch(p.Args, client, p.Context)
+			return res, err
 		},
-	)
+	})
 
-	var queryType = graphql.NewObject(
-		graphql.ObjectConfig{
-			Name: "Query",
-			Fields: graphql.Fields{
-				// Define the basic FT.SEARCH query - used to be ft
-				searchidx: &graphql.Field{
-					Type: graphql.NewList(ftType),
-					Args: args,
-					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						res, err := FtSearch(p.Args, client, p.Context)
-						return res, err
-					},
-				},
-				// Define the basic FT.AGGREGATE and GROUPBY/COUNT query - used to be agg_count
-				fmt.Sprintf("%sAggCount", searchidx): &graphql.Field{
-					Type: graphql.NewList(ftType),
-					Args: args,
-					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						res, err := FtAggCount(p.Args, client, p.Context)
-						return res, err
-					},
-				},
-				// Define the basic FT.AGGREGATE with numeric filters - used to be agg_numgroup
-				fmt.Sprintf("%sAggNumGroup", searchidx): &graphql.Field{
-					Type: graphql.NewList(ftType),
-					Args: args,
-					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						res, err := FtAggNumGroup(p.Args, client, p.Context)
-						return res, err
-					},
-				},
-				// Define the raw FT.AGGREGATE query - used to be agg_raw
-				fmt.Sprintf("%sAggRaw", searchidx): &graphql.Field{
-					Type: graphql.NewList(ftType),
-					Args: args,
-					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-						res, err := FtAggRaw(p.Args, client, p.Context)
-						return res, err
-					},
-				},
-			},
-		})
+	queryType.AddFieldConfig(fmt.Sprintf("%sAggCount", searchidx), &graphql.Field{
+		Type: graphql.NewList(ftType),
+		Args: args,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			res, err := FtAggCount(p.Args, client, p.Context)
+			return res, err
+		},
+	})
+
+	queryType.AddFieldConfig(fmt.Sprintf("%sAggNumGroup", searchidx), &graphql.Field{
+		Type: graphql.NewList(ftType),
+		Args: args,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			res, err := FtAggNumGroup(p.Args, client, p.Context)
+			return res, err
+		},
+	})
+
+	queryType.AddFieldConfig(fmt.Sprintf("%sAggRaw", searchidx), &graphql.Field{
+		Type: graphql.NewList(ftType),
+		Args: args,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			res, err := FtAggRaw(p.Args, client, p.Context)
+			return res, err
+		},
+	})
 
 	// Set the Schema
 	schema, _ = graphql.NewSchema(

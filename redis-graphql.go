@@ -56,6 +56,12 @@ func main() {
 		args.RedisIndex,
 	)
 
+	//i, ierr := searchClient.List()
+	//if ierr != nil {
+	//	sugar.Fatal("Error getting index list", zap.Error(ierr))
+	//}
+	//fmt.Printf("Indexes: %v\n", i)
+
 	// Build the graphql schema from the RediSearch Index
 	// https://redis.io/commands/ft.info/ details the index serch schema
 	// that we will map to a graphql schema
