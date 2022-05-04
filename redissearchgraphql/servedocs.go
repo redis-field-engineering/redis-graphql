@@ -66,7 +66,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: 3.14,
 	    )
 	{
@@ -92,7 +92,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{- if eq $val2 "bte" }}
 	    {{ $combined }}: [10, 20],
 	    {{- else }}
@@ -125,7 +125,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: "myValue",
 	    )
 	{
@@ -151,7 +151,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: "myValue",
 	    )
 	{
@@ -180,7 +180,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"},
 	    )
 	{
@@ -206,7 +206,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"}},
 	    )
 	{
@@ -236,7 +236,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: ["tag1", "tag2"]
 	    )
 	{
@@ -263,7 +263,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: ["tag1", "tag2"]
 	    )
 	{
@@ -292,7 +292,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    raw_query: "*",
 	    )
 	{

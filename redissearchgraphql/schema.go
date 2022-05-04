@@ -197,8 +197,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 		graphql.ObjectConfig{
 			Name: "Query",
 			Fields: graphql.Fields{
-				// Define the basic FT.SEARCH query
-				"ft": &graphql.Field{
+				// Define the basic FT.SEARCH query - used to be ft
+				searchidx: &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -206,8 +206,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
-				// Define the basic FT.AGGREGATE and GROUPBY/COUNT query
-				"agg_count": &graphql.Field{
+				// Define the basic FT.AGGREGATE and GROUPBY/COUNT query - used to be agg_count
+				fmt.Sprintf("%sAggCount", searchidx): &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -215,8 +215,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
-				// Define the basic FT.AGGREGATE with numeric filters
-				"agg_numgroup": &graphql.Field{
+				// Define the basic FT.AGGREGATE with numeric filters - used to be agg_numgroup
+				fmt.Sprintf("%sAggNumGroup", searchidx): &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
@@ -224,8 +224,8 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 						return res, err
 					},
 				},
-				// Define the raw FT.AGGREGATE query
-				"agg_raw": &graphql.Field{
+				// Define the raw FT.AGGREGATE query - used to be agg_raw
+				fmt.Sprintf("%sAggRaw", searchidx): &graphql.Field{
 					Type: graphql.NewList(ftType),
 					Args: args,
 					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
