@@ -8,9 +8,60 @@ import (
 	"github.com/gorilla/mux"
 )
 
+var alldataTempl = template.Must(template.New("").Parse(alldataHTML))
+
 var dataTempl = template.Must(template.New("").Parse(dataHTML))
 
-// dataHTML is the HTML template for the docs page
+const alldataHTML = `<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>GraphQL Documentation</title>
+    </head>
+    <style>
+    pre { background-color: black; color: white; margin-left: 80px; width: 65%; }
+    p { margin-left: 65px; }
+    h1 { color: blue; margin-left: 25px; }
+    h2 { color: maroon; margin-left: 40px; }
+    h3 { color: green; margin-left: 60px; }
+    h4 { color: black; margin-left: 70px; }
+    table {
+	border-collapse: collapse;
+	width: 50%;
+	margin-left: 80px;
+      }
+      
+      th, td {
+	text-align: left;
+	padding: 8px;
+      }
+      
+      tr:nth-child(even) {
+	background-color: #D6EEEE;
+      }
+    </style>
+    <body>
+
+    <h1> GraphQL Documentation</h1>
+
+    <table>
+    <tr><th>Index</th><th>Docs</th></tr>
+{{ range $key,$val := . }}
+      <tr>
+      <td>{{ $key }}<a></td>
+      <td><a href="/docs/{{ $key }}">Link<a></td>
+      </tr>
+      <td>{{ $key }}AggCount<a></td>
+      <td><a href="https://github.com/redis-field-engineering/redis-graphql/blob/master/docs/Aggregations.md">Reference</a></td>
+      </tr>
+      <td>{{ $key }}AggNumGroup<a></td>
+      <td><a href="https://github.com/redis-field-engineering/redis-graphql/blob/master/docs/Aggregations.md">Reference</a></td>
+      </tr>
+      <td>{{ $key }}AggNumRaw<a></td>
+      <td><a href="https://github.com/redis-field-engineering/redis-graphql/blob/master/docs/Aggregations.md">Reference</a></td>
+      </tr>
+{{ end}}
+`
+
 const dataHTML = `<!DOCTYPE html>
 <html lang="en">
     <head>
@@ -331,6 +382,17 @@ func (alldocs AllDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	var v interface{} = alldocs[idx]
 	err := dataTempl.Execute(w, &v)
+	if err != nil {
+		fmt.Println(err)
+	}
+}
+
+// ServeDocs generates the documentation for the schema and displays using the template above
+func (alldocs AllDocs) ServeAllDocs(w http.ResponseWriter, r *http.Request) {
+	promDocsViewCount.Inc()
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	var v interface{} = alldocs
+	err := alldataTempl.Execute(w, &v)
 	if err != nil {
 		fmt.Println(err)
 	}

@@ -47,10 +47,10 @@ FT.CREATE Gamers ON HASH PREFIX 1 user: SCHEMA username TEXT location GEO SORTAB
 
 See [Tips and Tricks](./docs/SchemaTipsAndTricks.md) for more detailed information on creating a Redisearch schema
 
-### Run the GraphQL server and point at the index
+### Run the GraphQL server and point at the the Redis instance
 
 ```
-./redis-graphql --redis-host localhost --redis-port 6379 --redis-index Gamers
+./redis-graphql --redis-host localhost --redis-port 6379
 ```
 
 ### View the auto generated documents in browser

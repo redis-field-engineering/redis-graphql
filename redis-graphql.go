@@ -22,7 +22,6 @@ var args struct {
 	RedisServer   string `help:"Redis to connect to" default:"localhost" arg:"--redis-host, -s, env:REDIS_SERVER"`
 	RedisPort     int    `help:"Redis port to connect to" default:"6379" arg:"--redis-port, -p, env:REDIS_PORT"`
 	RedisPassword string `help:"Redis password" default:"" arg:"--redis-password, -a, env:REDIS_PASSWORD"`
-	RedisIndex    string `help:"RediSearch Index" default:"idx" arg:"--redis-index, -i, env:REDIS_INDEX"`
 }
 
 func main() {
@@ -66,7 +65,6 @@ func main() {
 	// https://redis.io/commands/ft.info/ details the index serch schema
 	// that we will map to a graphql schema
 	schema, docs, nerr := rsq.FtInfo2Schema(searchIndices)
-	//schema, docs, nerr := rsq.FtInfo2Schema(searchIndices[args.RedisIndex], args.RedisIndex)
 	if nerr != nil {
 		sugar.Fatalw("Failed to build schema", "error", nerr)
 	}
@@ -75,8 +73,7 @@ func main() {
 	router := mux.NewRouter()
 
 	// Serve the auto-generated graphql schema docs
-	//router.HandleFunc("/docs", docs.ServeDocs)
-
+	router.HandleFunc("/docs", docs.ServeAllDocs)
 	router.HandleFunc("/docs/{index}", docs.ServeDocs)
 
 	// Perform all graphql queries against the schema
@@ -140,7 +137,6 @@ func main() {
 	sugar.Infow(
 		"server_started",
 		"addr", args.Addr,
-		"index", args.RedisIndex,
 	)
 
 	http.ListenAndServe(args.Addr, router)
