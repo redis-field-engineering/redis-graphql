@@ -10,7 +10,7 @@ import (
 // Given a list of fields detailed from the docs page http://localhost:8080/docs
 // it will return a JSON array of results matching those queries
 // see https://redis.io/commands/ft.search for more information
-func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+func FtSearch(args map[string]interface{}, clients map[string]*redisearch.Client, index string, c context.Context) ([]map[string]interface{}, error) {
 	promFtSearchCount.Inc()
 	var res []map[string]interface{}
 	qstring := ""
@@ -32,6 +32,8 @@ func FtSearch(args map[string]interface{}, client *redisearch.Client, c context.
 			q = q.SetFlags(redisearch.QueryVerbatim)
 		}
 	}
+
+	client := clients[index]
 
 	docs, _, err := client.Search(q)
 

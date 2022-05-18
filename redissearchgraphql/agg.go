@@ -3,6 +3,7 @@ package redissearchgraphql
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 	"github.com/gomodule/redigo/redis"
@@ -13,7 +14,7 @@ import (
 // It takes the GraphQL variables as input and returns a map of the results
 // see https://redis.io/docs/stack/search/reference/aggregations/#count
 // for count documentation
-func FtAggCount(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+func FtAggCount(args map[string]interface{}, clients map[string]*redisearch.Client, index string, c context.Context) ([]map[string]interface{}, error) {
 	promAggCountCount.Inc()
 	var res []map[string]interface{}
 	q1 := redisearch.NewAggregateQuery()
@@ -35,7 +36,7 @@ func FtAggCount(args map[string]interface{}, client *redisearch.Client, c contex
 		q1 = q1.Limit(0, int(lim.(float64)))
 	}
 
-	docs, _, err := client.Aggregate(q1)
+	docs, _, err := clients[strings.TrimSuffix(index, "AggCount")].Aggregate(q1)
 
 	if err != nil {
 		promPostErrorCount.Inc()
@@ -55,7 +56,7 @@ func FtAggCount(args map[string]interface{}, client *redisearch.Client, c contex
 // For more information on the numeric functions
 // see https://redis.io/docs/stack/search/reference/aggregations/#supported-groupby-reducers
 // for more information
-func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+func FtAggNumGroup(args map[string]interface{}, clients map[string]*redisearch.Client, index string, c context.Context) ([]map[string]interface{}, error) {
 	promAggNumgroupCount.Inc()
 	var res []map[string]interface{}
 	q1 := redisearch.NewAggregateQuery()
@@ -94,7 +95,7 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 		q1 = q1.Limit(0, int(lim.(float64)))
 	}
 
-	docs, _, err := client.Aggregate(q1)
+	docs, _, err := clients[strings.TrimSuffix(index, "AggNumGroup")].Aggregate(q1)
 
 	if err != nil {
 		promPostErrorCount.Inc()
@@ -115,7 +116,7 @@ func FtAggNumGroup(args map[string]interface{}, client *redisearch.Client, c con
 // If returning a count be sure to name it as _agg_groupby_count
 // If returning a numeric value be sure to name it as _agg_groupby_num
 // Otherwise be sure to return args of field names see http://localhost:8080/docs
-func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.Context) ([]map[string]interface{}, error) {
+func FtAggRaw(args map[string]interface{}, clients map[string]*redisearch.Client, index string, c context.Context) ([]map[string]interface{}, error) {
 	promAggRawCount.Inc()
 	var res []map[string]interface{}
 	var aggPlan redis.Args
@@ -139,7 +140,7 @@ func FtAggRaw(args map[string]interface{}, client *redisearch.Client, c context.
 
 	q1.AggregatePlan = aggPlan
 
-	docs, _, err := client.Aggregate(q1)
+	docs, _, err := clients[strings.TrimSuffix(index, "AggRaw")].Aggregate(q1)
 
 	if err != nil {
 		promPostErrorCount.Inc()

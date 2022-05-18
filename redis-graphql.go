@@ -67,12 +67,11 @@ func main() {
 		searchIndices[x] = redisearch.NewClientFromPool(pool, indicies[i])
 	}
 
-	fmt.Printf("%v\n", searchIndices)
-
 	// Build the graphql schema from the RediSearch Index
 	// https://redis.io/commands/ft.info/ details the index serch schema
 	// that we will map to a graphql schema
-	schema, docs, nerr := rsq.FtInfo2Schema(searchIndices[args.RedisIndex], args.RedisIndex)
+	schema, docs, nerr := rsq.FtInfo2Schema(searchIndices)
+	//schema, docs, nerr := rsq.FtInfo2Schema(searchIndices[args.RedisIndex], args.RedisIndex)
 	if nerr != nil {
 		sugar.Fatalw("Failed to build schema", "error", nerr)
 	}
