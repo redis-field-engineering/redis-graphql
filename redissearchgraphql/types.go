@@ -6,6 +6,8 @@ type PostVars struct {
 	Variables map[string]interface{}
 }
 
+type AllDocs map[string]SchemaDocs
+
 type PostData struct {
 	Query     string                 `json:"query"`
 	Operation string                 `json:"operation"`
@@ -33,4 +35,8 @@ type Index struct {
 
 func NewSchemaDocs() *SchemaDocs {
 	return &SchemaDocs{FieldDocs: make(map[string]string)}
+}
+
+func (s *AllDocs) GetIndex(indexName string) *SchemaDocs {
+	return NewSchemaDocs()
 }

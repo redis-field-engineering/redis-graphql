@@ -25,11 +25,6 @@ var args struct {
 	RedisIndex    string `help:"RediSearch Index" default:"idx" arg:"--redis-index, -i, env:REDIS_INDEX"`
 }
 
-//func BlahHandler(w http.ResponseWriter, r *http.Request) {
-//	vars := mux.Vars(r)
-//	w.Write([]byte(vars["index"]))
-//}
-
 func main() {
 	// Parse the command line arguments
 	arg.MustParse(&args)
@@ -80,9 +75,9 @@ func main() {
 	router := mux.NewRouter()
 
 	// Serve the auto-generated graphql schema docs
-	router.HandleFunc("/docs", docs.ServeDocs)
+	//router.HandleFunc("/docs", docs.ServeDocs)
 
-	//router.HandleFunc("/docs/{index}", BlahHandler)
+	router.HandleFunc("/docs/{index}", docs.ServeDocs)
 
 	// Perform all graphql queries against the schema
 	router.HandleFunc("/graphql", func(w http.ResponseWriter, req *http.Request) {

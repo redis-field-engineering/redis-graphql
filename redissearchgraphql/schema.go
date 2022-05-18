@@ -40,9 +40,9 @@ var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 // see https://redis.io/commands/ft.info/ for more information
 //   This adds some extra fields to the schema that are not part of the RediSearch schema
 //   All of the extra fields are prefixed with "_"
-func FtInfo2Schema(idxlist map[string]*redisearch.Client) (graphql.Schema, SchemaDocs, error) {
+func FtInfo2Schema(idxlist map[string]*redisearch.Client) (graphql.Schema, AllDocs, error) {
 	var schema graphql.Schema
-	var docs SchemaDocs = *NewSchemaDocs()
+	var AllDocs = AllDocs{}
 
 	fields := make(graphql.Fields)
 	args := make(graphql.FieldConfigArgument)
@@ -67,11 +67,12 @@ func FtInfo2Schema(idxlist map[string]*redisearch.Client) (graphql.Schema, Schem
 
 	// -------------------------------------------------- LOOP HERE -------------------------------------
 	for searchidx, client := range idxlist {
+		docs := *NewSchemaDocs()
 		docs.IndexName = searchidx
 		idx, err := client.Info()
 
 		if err != nil {
-			return schema, docs, err
+			return schema, AllDocs, err
 		}
 
 		// Add a new argument "raw_query" that will allow us to pass in a raw RediSearch query
@@ -243,6 +244,7 @@ func FtInfo2Schema(idxlist map[string]*redisearch.Client) (graphql.Schema, Schem
 			},
 		})
 
+		AllDocs[searchidx] = docs
 	}
 
 	// Set the Schema
@@ -252,5 +254,5 @@ func FtInfo2Schema(idxlist map[string]*redisearch.Client) (graphql.Schema, Schem
 		},
 	)
 
-	return schema, docs, nil
+	return schema, AllDocs, nil
 }
