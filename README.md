@@ -59,10 +59,10 @@ http://localhost:8080/docs
 
 ### Run a query
 ```
-curl -s -X POST  -H "Content-Type: application/json" --data '{"query": "{ ft(username:\"jennifer82\") {username,email,rating}}"}'   http://localhost:8080/graphql 
+curl -s -X POST  -H "Content-Type: application/json" --data '{"query": "{ Gamers(username:\"jennifer82\") {username,email,rating}}"}'   http://localhost:8080/graphql 
 {
   "data": {
-    "ft": [
+    "Gamers": [
       {
         "email": "jennifer.lewis@example.com",
         "rating": 591,

@@ -1,14 +1,16 @@
 # Queries
 
-## FT
+## Full Text search
+
+We will querying the RediSearch index Gamers
 
 ### Matching 
-There is one query type "ft", the full text search.  
+There is one query type "Gamers", the full text search.  
 
 This can be called as follows:
 
 ```
-    ft(
+    Gamers(
         field1: "value1",
         field2: "value2",
     )
@@ -28,7 +30,7 @@ The default of the AND the limit of the records returned can be modified with Gr
 
 | QUERY | GRAPHQL Variables |
 |--|--|
-| ```     ft( field1: "value1", field2: "value2",) { field3, field4, field5 } }```| ```{"limit": 2, "ormatch": true}```|
+| ```     Gamers( field1: "value1", field2: "value2",) { field3, field4, field5 } }```| ```{"limit": 2, "ormatch": true}```|
 
 The above will now return up to 2 records where field1 matches value1 OR field2 matches value2
 
@@ -56,7 +58,7 @@ When matching tags you will need to escape any special characters or spaces and 
 
 ```
 query {
-     ft( email: ["chris\\@example\\.com"],)
+     Gamers( email: ["chris\\@example\\.com"],)
      { username }
  }
 ```
@@ -67,7 +69,7 @@ The Redisearch query language can be very powerful and with the options and vari
 
 ```
    query {
-        ft(
+        Gamers(
             raw_query: "(@field1:value1 @field2:[1, 100])|(@field2:val2 ~@field7:val7)",
         )
         {

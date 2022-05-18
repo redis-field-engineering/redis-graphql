@@ -4,7 +4,7 @@ Find me all not technology companies raned betwen 100 and 150 with equity greate
 
 ```
    query {
-        ft(
+        idx(
             tags_not: ["technology"],
             rank_bte: [100, 150],
             equity_gte: 3000
@@ -30,7 +30,7 @@ query:
 
 ```
 query {
-        ft(
+        idx(
             ceo: "michael jackson",
             company: "%honeybell%"
         )
@@ -53,7 +53,7 @@ query:
 
 ```
    query {
-        ft( 
+        idx( 
             raw_query: "*"
         )
         {

@@ -6,7 +6,9 @@ For example group together all records by a field then count by field and sort.
 
 There are 3 different aggregations available and the examples are part of the Fortune 500 dataset in the data directory.
 
-## agg_count
+For the examples below, we will be using the RediSearch index Fortune500
+
+## (INDEX_NAME)AggCount
 
 This is a group by and count returned in descending order.
 
@@ -14,7 +16,7 @@ It requires the argument *_agg_groupby* as the field to group by and returns the
 
 ```
 query {
-     agg_count(
+     Fortune500AggCount(
          hqstate_not: "(ca|ny)"
          tags: ["technology"],
          _agg_groupby: "hqstate",
@@ -33,7 +35,7 @@ The data returned will look like:
 ```
 {
     "data": {
-        "agg_count": [
+        "Fortune500AggCount": [
             {
                 "_agg_groupby_count": 53,
                 "hqstate": "ny"
@@ -49,7 +51,7 @@ The data returned will look like:
 	    ...
 ```
 
-## agg_numgroup
+## (INDEX_NAME)AggNumGroup
 
 This provides the following numeric functions that can be used to roll up numeric fields
 
@@ -87,7 +89,7 @@ Example 1:
 
 ```
 query {
-     agg_numgroup(
+     Fortune500AggNumGroup(
          _agg_groupby: "hqcity",
          _agg_num_field: "revenues",
          _agg_num_function: "sum",        )
@@ -103,7 +105,7 @@ Returns
 ```
 {
     "data": {
-        "agg_numgroup": [
+        "Fortune500AggNumGroup": [
             {
                 "_agg_groupby_num": 1108104,
                 "hqcity": "new york"
@@ -120,7 +122,7 @@ Returns
 ```
 
 
-## agg_raw
+## (INDEX_NAME)AggRaw
 
 As with querying we do allow for the possiblity of passing raw aggregations however these are complex
 
@@ -130,7 +132,7 @@ Example:
 
 ```
     query {
-        agg_raw(
+        Fortune500AggRaw(
             hqstate_not: "dc",
             raw_agg_plan: 
 	    ["GROUPBY","1","@hqstate","REDUCE",

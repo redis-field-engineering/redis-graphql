@@ -5,7 +5,7 @@ import csv
 
 def load_data(redis_server, redis_port, redis_password):
    load_client = Client(
-      'fortune500-v1',
+      'fortune500_v1',
       host=redis_server,
       password=redis_password,
       port=redis_port

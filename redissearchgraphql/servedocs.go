@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 var dataTempl = template.Must(template.New("").Parse(dataHTML))
@@ -66,7 +68,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: 3.14,
 	    )
 	{
@@ -92,7 +94,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{- if eq $val2 "bte" }}
 	    {{ $combined }}: [10, 20],
 	    {{- else }}
@@ -125,7 +127,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: "myValue",
 	    )
 	{
@@ -151,7 +153,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: "myValue",
 	    )
 	{
@@ -180,7 +182,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"},
 	    )
 	{
@@ -206,7 +208,7 @@ const dataHTML = `<!DOCTYPE html>
    <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: {lat: 37.377658, lon: -122.064228, radius: 10, unit: "km"}},
 	    )
 	{
@@ -236,7 +238,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $val }}: ["tag1", "tag2"]
 	    )
 	{
@@ -263,7 +265,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    {{ $combined }}: ["tag1", "tag2"]
 	    )
 	{
@@ -292,7 +294,7 @@ const dataHTML = `<!DOCTYPE html>
     <p>Example Query:</p>
     <pre>
     query {
-	ft(
+	{{ $.IndexName }}(
 	    raw_query: "*",
 	    )
 	{
@@ -322,10 +324,12 @@ const dataHTML = `<!DOCTYPE html>
 `
 
 // ServeDocs generates the documentation for the schema and displays using the template above
-func (d *SchemaDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
+func (alldocs AllDocs) ServeDocs(w http.ResponseWriter, r *http.Request) {
 	promDocsViewCount.Inc()
+	vars := mux.Vars(r)
+	idx := vars["index"]
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	var v interface{} = d
+	var v interface{} = alldocs[idx]
 	err := dataTempl.Execute(w, &v)
 	if err != nil {
 		fmt.Println(err)
