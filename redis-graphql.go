@@ -53,19 +53,26 @@ func main() {
 	// Build the Redis Client for searching
 	searchClient := redisearch.NewClientFromPool(
 		pool,
-		args.RedisIndex,
+		"", // we don't need this to run the list command
 	)
 
-	//i, ierr := searchClient.List()
-	//if ierr != nil {
-	//	sugar.Fatal("Error getting index list", zap.Error(ierr))
-	//}
-	//fmt.Printf("Indexes: %v\n", i)
+	indicies, ierr := searchClient.List()
+	if ierr != nil {
+		sugar.Fatal("Error getting index list", zap.Error(ierr))
+	}
+
+	searchIndices := make(map[string]*redisearch.Client, len(indicies))
+
+	for i, x := range indicies {
+		searchIndices[x] = redisearch.NewClientFromPool(pool, indicies[i])
+	}
+
+	fmt.Printf("%v\n", searchIndices)
 
 	// Build the graphql schema from the RediSearch Index
 	// https://redis.io/commands/ft.info/ details the index serch schema
 	// that we will map to a graphql schema
-	schema, docs, nerr := rsq.FtInfo2Schema(searchClient, args.RedisIndex)
+	schema, docs, nerr := rsq.FtInfo2Schema(searchIndices[args.RedisIndex], args.RedisIndex)
 	if nerr != nil {
 		sugar.Fatalw("Failed to build schema", "error", nerr)
 	}

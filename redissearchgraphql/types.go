@@ -1,5 +1,7 @@
 package redissearchgraphql
 
+import "github.com/graphql-go/graphql"
+
 type PostVars struct {
 	Variables map[string]interface{}
 }
@@ -21,6 +23,12 @@ type SchemaDocs struct {
 	Tags         []string          `json:"tags"`
 	TagSuffix    []string          `json:"tagSuffix"`
 	FieldDocs    map[string]string `json:"fieldDocs"`
+}
+
+type Index struct {
+	SchemaDocs SchemaDocs     `json:"schemaDocs"`
+	Schema     graphql.Schema `json:"schema"`
+	SchemaErr  error          `json:"schemaErr"`
 }
 
 func NewSchemaDocs() *SchemaDocs {

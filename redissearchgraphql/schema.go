@@ -41,14 +41,8 @@ var geoInputObject = graphql.NewInputObject(graphql.InputObjectConfig{
 //   This adds some extra fields to the schema that are not part of the RediSearch schema
 //   All of the extra fields are prefixed with "_"
 func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema, SchemaDocs, error) {
-	idx, err := client.Info()
 	var schema graphql.Schema
 	var docs SchemaDocs = *NewSchemaDocs()
-	docs.IndexName = searchidx
-
-	if err != nil {
-		return schema, docs, err
-	}
 
 	fields := make(graphql.Fields)
 	args := make(graphql.FieldConfigArgument)
@@ -56,20 +50,28 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 	// Setup our graphql object
 	var ftType = graphql.NewObject(
 		graphql.ObjectConfig{
-			Name:   "FT",
+			Name:   "Redisearch",
 			Fields: fields,
 		},
 	)
 
 	var queryType = graphql.NewObject(
 		graphql.ObjectConfig{
-			Name: "Query",
-			// If we don't define a valid set of fields the AddFeil will fail below
+			Name: "Ping",
+			// If we don't define a valid set of fields the AddField will fail below
 			Fields: graphql.Fields{
 				"ping": &graphql.Field{
 					Type: graphql.NewList(ftType),
 				},
 			}})
+
+	// -------------------------------------------------- LOOP HERE -------------------------------------
+	docs.IndexName = searchidx
+	idx, err := client.Info()
+
+	if err != nil {
+		return schema, docs, err
+	}
 
 	// Add a new argument "raw_query" that will allow us to pass in a raw RediSearch query
 	args["raw_query"] = &graphql.ArgumentConfig{
@@ -245,5 +247,10 @@ func FtInfo2Schema(client *redisearch.Client, searchidx string) (graphql.Schema,
 			Query: queryType,
 		},
 	)
+
+	fmt.Printf("+%v\n", schema)
+	schema.AppendType(queryType)
+	fmt.Printf("+%v\n", schema)
+
 	return schema, docs, nil
 }
