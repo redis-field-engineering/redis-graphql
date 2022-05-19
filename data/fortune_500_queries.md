@@ -4,7 +4,7 @@ Find me all not technology companies raned betwen 100 and 150 with equity greate
 
 ```
    query {
-        idx(
+        fortune500_v1(
             tags_not: ["technology"],
             rank_bte: [100, 150],
             equity_gte: 3000
@@ -30,7 +30,7 @@ query:
 
 ```
 query {
-        idx(
+        fortune500_v1(
             ceo: "michael jackson",
             company: "%honeybell%"
         )
@@ -53,7 +53,7 @@ query:
 
 ```
    query {
-        idx( 
+        fortune500_v1( 
             raw_query: "*"
         )
         {
@@ -69,7 +69,7 @@ Count all technology companies not headquarted in CA or NY and group and count b
 
 ```
    query {
-        agg_count(
+        fortune500_v1AggCount(
             hqstate_not: "(ca|ny)"
             tags: ["technology"],
             _agg_groupby: "hqstate",
@@ -85,7 +85,7 @@ Numerical aggregation
 
 ```
    query {
-        agg_numgroup(
+        fortune500_v1AggNumGroup(
             _agg_groupby: "hqcity",
             _agg_num_field: "revenues",
             _agg_num_function: "sum",
@@ -101,7 +101,7 @@ Raw aggregation
 
 ```   
     query {
-        agg_raw(
+        fortune500_v1AggRaw(
             hqstate_not: "dc",
             raw_agg_plan: ["GROUPBY","1","@hqstate","REDUCE","QUANTILE","2","assets","0.99" "AS","_agg_groupby_num","SORTBY","2","@_agg_groupby_num","DESC"]
                         )
