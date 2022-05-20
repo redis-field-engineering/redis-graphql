@@ -30,9 +30,9 @@ The default of the AND the limit of the records returned can be modified with Gr
 
 | QUERY | GRAPHQL Variables |
 |--|--|
-| ```     Gamers( field1: "value1", field2: "value2",) { field3, field4, field5 } }```| ```{"limit": 2, "ormatch": true}```|
+| ```     Gamers( field1: "value1", field2: "value2",) { field3, field4, field5 } }```| ```{"limit": 50, "limit_offset": 50, "ormatch": true}```|
 
-The above will now return up to 2 records where field1 matches value1 OR field2 matches value2
+The above will now return records 50-100 where field1 matches value1 OR field2 matches value2
 
 
 ### Matching options 

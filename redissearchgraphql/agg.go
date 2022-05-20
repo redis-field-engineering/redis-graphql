@@ -34,6 +34,9 @@ func FtAggCount(args map[string]interface{}, clients map[string]*redisearch.Clie
 
 	if lim, ok := argsMap["limit"]; ok {
 		q1 = q1.Limit(0, int(lim.(float64)))
+		if limOffset, ok := argsMap["limit_offset"]; ok {
+			q1 = q1.Limit(int(limOffset.(float64)), int(lim.(float64)))
+		}
 	}
 
 	docs, _, err := clients[strings.TrimSuffix(index, "AggCount")].Aggregate(q1)
@@ -93,6 +96,9 @@ func FtAggNumGroup(args map[string]interface{}, clients map[string]*redisearch.C
 
 	if lim, ok := argsMap["limit"]; ok {
 		q1 = q1.Limit(0, int(lim.(float64)))
+		if limOffset, ok := argsMap["limit_offset"]; ok {
+			q1 = q1.Limit(int(limOffset.(float64)), int(lim.(float64)))
+		}
 	}
 
 	docs, _, err := clients[strings.TrimSuffix(index, "AggNumGroup")].Aggregate(q1)
@@ -132,6 +138,9 @@ func FtAggRaw(args map[string]interface{}, clients map[string]*redisearch.Client
 
 	if lim, ok := argsMap["limit"]; ok {
 		q1 = q1.Limit(0, int(lim.(float64)))
+		if limOffset, ok := argsMap["limit_offset"]; ok {
+			q1 = q1.Limit(int(limOffset.(float64)), int(lim.(float64)))
+		}
 	}
 
 	for _, y := range args["raw_agg_plan"].([]interface{}) {

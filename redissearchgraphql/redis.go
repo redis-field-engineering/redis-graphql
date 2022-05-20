@@ -25,6 +25,9 @@ func FtSearch(args map[string]interface{}, clients map[string]*redisearch.Client
 
 	if lim, ok := argsMap["limit"]; ok {
 		q = q.Limit(0, int(lim.(float64)))
+		if limOffset, ok := argsMap["limit_offset"]; ok {
+			q = q.Limit(int(limOffset.(float64)), int(lim.(float64)))
+		}
 	}
 
 	if verbatim, ok := argsMap["verbatim"]; ok {
