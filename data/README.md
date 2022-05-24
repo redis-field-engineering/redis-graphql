@@ -4,7 +4,7 @@
 
 This will load the Fortune 500 data into an index called fortune500_v1
 
-fortune_500_queries.md contains some sample queris on the data that can just be pasted into Postman
+[This](./fortune_500_queries.md) contains some sample queries on the data that can just be pasted into [Postman](https://www.postman.com/downloads/)
 
 To load the data
 
