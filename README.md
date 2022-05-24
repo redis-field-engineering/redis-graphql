@@ -45,6 +45,8 @@ HSET user:jennifer82 username jennifer82  rating 591  email jennifer.lewis@examp
 FT.CREATE Gamers ON HASH PREFIX 1 user: SCHEMA username TEXT location GEO SORTABLE rating NUMERIC SORTABLE playstyle TAG email TAG
 ```
 
+Note: Please do not use ```:``` or ```-``` in the Index name.  ```_``` is acceptable.
+
 See [Tips and Tricks](./docs/SchemaTipsAndTricks.md) for more detailed information on creating a Redisearch schema
 
 ### Run the GraphQL server and point at the the Redis instance
