@@ -50,9 +50,9 @@ func main() {
 		"", // we don't need this to run the list command
 	)
 
-	indicies, ierr := searchClient.List()
+	indicies, ierr := rsq.GetIndices(searchClient)
 	if ierr != nil {
-		sugar.Fatal("Error getting index list", zap.Error(ierr))
+		sugar.Fatal("Error getting index list ", zap.Error(ierr))
 	}
 
 	searchIndices := make(map[string]*redisearch.Client, len(indicies))
