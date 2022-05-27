@@ -9,6 +9,21 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
+// removeEnterpriseAddedFields
+// In the case of an average Redis Enterprise adds some extra fields to the response
+// We need to remove anything starting with __generated_aliassum__ which throws off our parsing
+func removeEnterpriseAddedFields(doc []string) []string {
+	var cleanDoc []string
+	for i := 0; i < len(doc); i++ {
+		if strings.HasPrefix(doc[i], "__generated_aliassum__") {
+			i++
+		} else {
+			cleanDoc = append(cleanDoc, doc[i])
+		}
+	}
+	return cleanDoc
+}
+
 // FtAggCount queries the RediSearch server for the count of documents matching the query
 // It's very similary to the SQL COUNT/GROUPBY function
 // It takes the GraphQL variables as input and returns a map of the results
@@ -109,8 +124,9 @@ func FtAggNumGroup(args map[string]interface{}, clients map[string]*redisearch.C
 	}
 
 	for _, doc := range docs {
-		if len(doc) == 4 {
-			res = append(res, map[string]interface{}{doc[0]: doc[1], doc[2]: doc[3]})
+		if len(doc) >= 4 {
+			cleanDoc := removeEnterpriseAddedFields(doc)
+			res = append(res, map[string]interface{}{cleanDoc[0]: cleanDoc[1], cleanDoc[2]: cleanDoc[3]})
 		}
 	}
 
