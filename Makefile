@@ -13,10 +13,10 @@ deps:
 	go get
 
 build:
-	$(GOBUILD) $(GOFILES)
+	CGO_ENABLED=0 $(GOBUILD) $(GOFILES)
 
 linuxbuild:
-	GOOS=linux GOARCH=amd64 go build $(GOFILES)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFILES)
 
 docker:
 	docker build -t maguec/redis-graphql .
