@@ -46,6 +46,7 @@ func FtSearch(args map[string]interface{}, clients map[string]*redisearch.Client
 	}
 
 	for _, doc := range docs {
+		promDocsViewCount.Inc()
 		res = append(res, doc.Properties)
 	}
 
