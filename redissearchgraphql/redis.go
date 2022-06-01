@@ -2,6 +2,7 @@ package redissearchgraphql
 
 import (
 	"context"
+	"time"
 
 	"github.com/RediSearch/redisearch-go/redisearch"
 )
@@ -38,7 +39,9 @@ func FtSearch(args map[string]interface{}, clients map[string]*redisearch.Client
 
 	client := clients[index]
 
+	start := time.Now()
 	docs, _, err := client.Search(q)
+	ObserveRedisDuration(time.Since(start).Milliseconds())
 
 	if err != nil {
 		promPostErrorCount.Inc()

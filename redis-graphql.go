@@ -22,6 +22,7 @@ var args struct {
 	RedisServer   string `help:"Redis to connect to" default:"localhost" arg:"--redis-host, -s, env:REDIS_SERVER"`
 	RedisPort     int    `help:"Redis port to connect to" default:"6379" arg:"--redis-port, -p, env:REDIS_PORT"`
 	RedisPassword string `help:"Redis password" default:"" arg:"--redis-password, -a, env:REDIS_PASSWORD"`
+	RedisConnPool int    `help:"Redis connection pool" default:"250" arg:"--redis-pool, -w, env:REDIS_PORT"`
 }
 
 func main() {
@@ -37,12 +38,21 @@ func main() {
 	rsq.InitPrometheus()
 
 	// Initialize RediSearch client
-	pool := &redis.Pool{Dial: func() (redis.Conn, error) {
-		return redis.Dial(
-			"tcp",
-			fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
-			redis.DialPassword(args.RedisPassword))
-	}}
+	pool := &redis.Pool{
+		MaxActive:   args.RedisConnPool,
+		MaxIdle:     args.RedisConnPool,
+		Wait:        true,
+		IdleTimeout: 1000 * time.Second,
+		Dial: func() (redis.Conn, error) {
+			return redis.Dial(
+				"tcp",
+				fmt.Sprintf("%s:%d", args.RedisServer, args.RedisPort),
+				redis.DialPassword(args.RedisPassword))
+		}}
+
+	// Kick off the RediSearch client pool stats goroutine
+
+	go rsq.PoolStats(pool)
 
 	// Build the Redis Client for searching
 	searchClient := redisearch.NewClientFromPool(

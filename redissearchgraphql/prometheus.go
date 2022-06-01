@@ -41,6 +41,24 @@ var (
 			Help:    "The amount of time it takes to process a GraphQL request in ms",
 			Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000},
 		})
+	promRedisHistogram = prometheus.NewHistogram(
+		prometheus.HistogramOpts{
+			Name:    "redisgraphql_redis_duration_milliseconds",
+			Help:    "The amount of time it takes to process a GraphQL request in ms",
+			Buckets: []float64{5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 500000, 1000000},
+		})
+	promPoolActive = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "redisgraphql_pool_active",
+		Help: "The number of active connections in the pool",
+	})
+	promPoolIdle = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "redisgraphql_pool_idle",
+		Help: "The number of idle connections in the pool",
+	})
+	promPoolWait = promauto.NewGauge(prometheus.GaugeOpts{
+		Name: "redisgraphql_pool_wait",
+		Help: "The number of wait connections in the pool",
+	})
 )
 
 // IncrPromPostErrors increments the post error counter
@@ -61,8 +79,15 @@ func ObserveGraphqlDuration(dur int64) {
 	promGraphqlHistogram.Observe(float64(dur))
 }
 
+// ObserveGraphqlDuration observes the duration of a Redisearch request for latency purposes
+// It's exported to allow for top levels availability
+func ObserveRedisDuration(dur int64) {
+	promRedisHistogram.Observe(float64(dur))
+}
+
 // InitPrometheus initializes the Prometheus metrics which is necessary for
 // for histogram and summary types
 func InitPrometheus() {
 	prometheus.MustRegister(promGraphqlHistogram)
+	prometheus.MustRegister(promRedisHistogram)
 }
