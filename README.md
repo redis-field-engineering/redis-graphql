@@ -76,3 +76,9 @@ curl -s -X POST  -H "Content-Type: application/json" --data '{"query": "{ Gamers
 ```
 
 See [Querying](./docs/Queries.md) and [Aggregations](./docs/Aggregations.md) for more detailed query examples
+
+
+
+## Utilities
+
+Example [Prometheus/Grafana Setup](./utils/grafana/README.md) is available
