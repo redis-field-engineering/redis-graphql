@@ -23,6 +23,7 @@ var args struct {
 	RedisPort     int    `help:"Redis port to connect to" default:"6379" arg:"--redis-port, -p, env:REDIS_PORT"`
 	RedisPassword string `help:"Redis password" default:"" arg:"--redis-password, -a, env:REDIS_PASSWORD"`
 	RedisConnPool int    `help:"Redis connection pool" default:"250" arg:"--redis-pool, -w, env:REDIS_PORT"`
+	Logfile       string `help:"redis-graphql log file" default:"stdout" arg:"--log-file, -l, env:LOGFILE"`
 }
 
 func main() {
@@ -30,9 +31,7 @@ func main() {
 	arg.MustParse(&args)
 
 	// Initialize the Logger
-	logger, _ := zap.NewProduction()
-	defer logger.Sync()
-	sugar := logger.Sugar()
+	sugar := rsq.InitLogger(args.Logfile)
 
 	// Initialize Prometheus histogram and summary metrics
 	rsq.InitPrometheus()
@@ -67,8 +66,13 @@ func main() {
 
 	searchIndices := make(map[string]*redisearch.Client, len(indicies))
 
+	if len(indicies) == 0 {
+		sugar.Fatalf("No indices found on server %s:%d", args.RedisServer, args.RedisPort)
+	}
+
 	for i, x := range indicies {
 		searchIndices[x] = redisearch.NewClientFromPool(pool, indicies[i])
+		sugar.Infof("Index %s found", indicies[i])
 	}
 
 	// Build the graphql schema from the RediSearch Index
